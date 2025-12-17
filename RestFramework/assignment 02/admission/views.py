@@ -1,3 +1,4 @@
+from functools import partial
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -74,7 +75,7 @@ class StudentAPIView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         student = get_object_or_404(Student, id=student_id)
-        serializer = StudentSerializer(student, data=request.data)
+        serializer = StudentSerializer(student, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({
