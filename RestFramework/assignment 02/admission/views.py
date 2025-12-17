@@ -2,13 +2,20 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 
-class AddmissionUrlsView(APIView):
+class UrlsView(APIView):
     def get(self, request):
         return Response({
-            "All addmissions url": "GET /api/addmissions/"
+            "status": "success",
+            "message": "Admission API endpoints available",
+            "endpoints": {
+                "get_urls": "GET /api/urls/",
+                "register": "POST /api/registration/"
+            }
         })
     
-class AddmissionDetailView(APIView):
+class RegistrationView(APIView):
     def post(self, request):
         return Response({
+            "status": "success",
+            "message": "Admission registration successful"
         })
