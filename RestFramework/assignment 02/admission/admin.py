@@ -1,7 +1,7 @@
 from django.contrib import admin
-from courses.models import Addmission
+from admission.models import Addmission
 
-# Register your models here.
+
 @admin.register(Addmission)
 class AddmissionAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'roll', 'cgpa')

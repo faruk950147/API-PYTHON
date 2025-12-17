@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from courses.models import Addmission
+from admission.models import Addmission
 
 class AddmissionSerializer(serializers.ModelSerializer):
     class Meta:

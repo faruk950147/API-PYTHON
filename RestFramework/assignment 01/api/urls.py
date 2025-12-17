@@ -1,5 +1,6 @@
-from courses.views import CourseListView
+from admission.views import AdmissionUrlsView
 from django.urls import path
+
 urlpatterns = [
-    path('course-list', CourseListView.as_view(), name='course-list'),
+    path('admissions/', AdmissionUrlsView.as_view(), name='admission-urls'),
 ]
