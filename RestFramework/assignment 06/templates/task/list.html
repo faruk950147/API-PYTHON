@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %} Todos list {% endblock title %}
+
+{% block main %}
+<div id="hero">
+    <div class="container">
+        <div id="taskContainer">
+            <div id="formWrapper">
+                <form id="form" method="POST">
+                    <div class="flexWrapper">
+                        <div style="flex: 6">
+                            <input type="text" name="title" id="title" class="form-control" placeholder="Add Task">
+                        </div>
+                        <div style="flex: 1">
+                            <input type="submit" value="Submit" id="submitBtn" class="btn">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="listWrapper">
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock main %}

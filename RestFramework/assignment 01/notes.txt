@@ -1,0 +1,188 @@
+1. Serializer কী?
+
+Serializer হল এমন একটি ক্লাস যা Python object (Model instance) → JSON data এ রূপান্তর করে
+এবং JSON data → Python object এ রূপান্তর করে।
+
+✔ Serializer-এর কাজ:
+
+Model থেকে ডেটা নিয়ে JSON করে API রেসপন্স পাঠানো
+
+API request থেকে ডেটা নিয়ে validate করা
+
+সেভ করার আগে clean করা
+
+Model instance তৈরি/আপডেট করা
+
+✔ Serializer-এর ধরন:
+
+Serializer (ম্যানুয়াল ফিল্ড লেখতে হয়)
+
+ModelSerializer (Model থেকে স্বয়ংক্রিয়ভাবে ফিল্ড তৈরি)
+
+🔹 ModelSerializer Example
+from rest_framework import serializers
+from .models import Product
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = '__all__'
+2. ViewSet & ModelViewSet
+ViewSet
+
+একটি ViewSet CRUD অপারেশন (list, retrieve, create, update, delete) করতে পারে।
+
+কিন্তু এর জন্য URL প্যাটার্ন সাধারণ Django views-এর মতো আলাদা আলাদা লিখতে হয় না।
+
+এখানে method-এর নাম অনুযায়ী কাজ হয় (list, create, retrieve, update, destroy)।
+
+Example:
+from rest_framework.viewsets import ViewSet
+
+class ProductViewSet(ViewSet):
+    def list(self, request):
+        pass
+
+    def retrieve(self, request, pk=None):
+        pass
+
+ModelViewSet
+
+ModelViewSet = ModelSerializer + Model queryset + Full CRUD
+
+এটি সবচেয়ে powerful ViewSet
+
+স্বয়ংক্রিয়ভাবে create, list, retrieve, update, delete সব পায়
+
+Example:
+from rest_framework.viewsets import ModelViewSet
+from .models import Product
+from .serializers import ProductSerializer
+
+class ProductViewSet(ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+
+এটি সবচেয়ে বেশি ব্যবহৃত ViewSet।
+
+3. APIView vs GenericAPIView
+✔ APIView
+
+DRF-এর বেসিক View
+
+এখানে সবকিছু manual ভাবে করতে হয়
+(serializer load, validation, save ইত্যাদি)
+
+Example:
+from rest_framework.views import APIView
+
+class ProductList(APIView):
+    def get(self, request):
+        pass
+
+    def post(self, request):
+        pass
+
+✔ GenericAPIView
+
+APIView এর ওপর ভিত্তি করে তৈরি
+
+Extra features দেয়:
+
+queryset
+
+serializer_class
+
+filter
+
+pagination
+
+GenericAPIView + Mixins → CRUD খুব সহজে তৈরি হয়
+
+Example:
+from rest_framework.generics import GenericAPIView
+from rest_framework import mixins
+
+class ProductList(mixins.ListModelMixin, mixins.CreateModelMixin, GenericAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+APIView vs GenericAPIView (Short Difference Table)
+Topic	APIView	GenericAPIView
+Queryset support	❌ নেই	✔ আছে
+serializer_class	❌ manually	✔ automatic
+Mixins support	❌	✔ আছে
+CRUD easy?	❌ No	✔ Yes
+Use case	Custom logic	CRUD with less code
+4. URL Routing — SimpleRouter vs DefaultRouter
+
+DRF-এ ViewSet ব্যবহার করলে সাধারণ path() লিখতে হয় না
+Router use করলে স্বয়ংক্রিয়ভাবে URL তৈরি হয়।
+
+✔ SimpleRouter
+
+Basic CRUD URL তৈরি করে
+
+কিন্তু Browsable API-এর root view থাকে না
+
+Example:
+from rest_framework.routers import SimpleRouter
+
+router = SimpleRouter()
+router.register('products', ProductViewSet)
+urlpatterns = router.urls
+
+
+Result URLs:
+
+/products/  
+/products/<id>/  
+
+✔ DefaultRouter
+
+SimpleRouter সবকিছু + একটি API root view দেয়
+(যেখানে সব endpoints list হিসেবে দেখায়)
+
+Example:
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register('products', ProductViewSet)
+urlpatterns = router.urls
+
+
+Result URLs:
+
+/ (root view)  
+/products/  
+/products/<id>/  
+
+Summary (সহজ ভাষায়)
+✔ Serializer
+
+ডেটা JSON ↔ Python রূপান্তর করে + validate করে।
+
+✔ ViewSet
+
+CRUD operations method অনুযায়ী হ্যান্ডেল করে।
+
+✔ ModelViewSet
+
+Full CRUD automatically।
+
+✔ APIView
+
+সব manually — স্বাধীন কিন্তু বড় কোড লাগে।
+
+✔ GenericAPIView
+
+APIView + queryset/serializer + mixins → কম কোডে CRUD।
+
+✔ SimpleRouter
+
+Basic ViewSet routes।
+
+✔ DefaultRouter
+
+SimpleRouter + root API link।

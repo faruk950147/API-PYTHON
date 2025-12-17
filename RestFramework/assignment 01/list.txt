@@ -1,0 +1,51 @@
+🔹 DRF Basics
+
+Serializer কী?
+
+ViewSet, ModelViewSet
+
+APIView vs GenericAPIView
+
+URL routing (SimpleRouter, DefaultRouter)
+
+🔹 Authentication & Permissions
+
+Token Authentication
+
+JWT Authentication
+
+Custom permissions
+
+🔹 CRUD API Full Project
+
+Model → Serializer → View → URL flow
+
+Pagination, Filtering, Search
+
+🔹 Advanced Topics
+
+Nested Serializers
+
+Custom Actions (@action)
+
+File Upload API
+
+Throttling
+
+Versioning
+
+🔹 Real Project Examples
+
+Login/Signup API
+
+E-commerce API
+
+Blog API
+
+Quiz/CRM API
+
+আপনি কোনটা চান?
+👉 "DRF full tutorial",
+👉 "CRUD API code",
+👉 "JWT auth",
+👉 "Serializer explanation",
