@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from admission.models import Registration
+from admission.models import Student
 
-class RegistrationSerializer(serializers.ModelSerializer):
+class StudentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Registration
+        model = Student
         fields = '__all__'

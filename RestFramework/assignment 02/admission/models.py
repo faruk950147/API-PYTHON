@@ -1,6 +1,6 @@
 from django.db import models
 
-class Registration(models.Model):
+class Student(models.Model):
     name = models.CharField(max_length=150)
     roll = models.IntegerField()
     cgpa = models.FloatField()
@@ -11,7 +11,7 @@ class Registration(models.Model):
 
     class Meta:
         ordering = ['id']
-        verbose_name_plural = '01 - Admissions'
+        verbose_name_plural = '01 - Students'
 
     def __str__(self):
         return f"{self.name} ({self.roll})"
