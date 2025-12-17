@@ -15,10 +15,10 @@ class GeneralView(APIView):
             "base_url": "http://127.0.0.1:8000/",
             "endpoints": [
                 "/student/add/",
-                "/students/list/",
-                "/student/detail/<id>/",
                 "/student/update/<id>/",
                 "/student/delete/<id>/"
+                "/student/detail/<id>/",
+                "/students/list/",
             ]
         })
 
