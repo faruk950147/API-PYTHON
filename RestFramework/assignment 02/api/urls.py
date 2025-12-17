@@ -2,6 +2,6 @@ from django.urls import path
 from admission.views import UrlsView, RegistrationView
 
 urlpatterns = [
-    path('urls/', UrlsView.as_view()),
+    path('', UrlsView.as_view()),
     path('registration/', RegistrationView.as_view()),
 ]
