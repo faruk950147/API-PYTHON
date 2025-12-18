@@ -1,7 +1,5 @@
-from re import A
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from info.models import Admission
@@ -11,38 +9,60 @@ from info.serializers import AdmissionSerializer
 class GenericAPIView(APIView):
     def get(self, request):
         return Response({"status": "success"})
-    
-def AdmissionInfoView(request):
-    if request.method == 'GET':
+
+class AdmissionInfoView(APIView):
+    def get(self, request):
         admissions = Admission.objects.all()
         serializer = AdmissionSerializer(admissions, many=True)
-        return Response(serializer.data)
+        return Response({
+            "msg": "Admissions retrieved successfully",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
     
-    data = request.data
-    if request.method == 'POST':
-        serializer = AdmissionSerializer(data=data)
+    def post(self, request):
+        serializer = AdmissionSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "msg": "Admission created successfully",
+                "data": serializer.data
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            "msg": "Invalid data",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
     
-    # PUT / PATCH / DELETE need id
-    admission = get_object_or_404(Admission, id=data.get('id'))
+    def put(self, request):
+        admission = get_object_or_404(Admission, id=request.data.get('id'))
+        serializer = AdmissionSerializer(admission, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "msg": "Admission updated successfully",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response({
+            "msg": "Invalid data",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-    if request.method == 'PUT':
-        serializer = AdmissionSerializer(admission, data=data)
+    def patch(self, request):
+        admission = get_object_or_404(Admission, id=request.data.get('id'))
+        serializer = AdmissionSerializer(admission, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "msg": "Admission partially updated",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        return Response({
+            "msg": "Invalid data",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
     
-    elif request.method == 'PATCH':
-        serializer = AdmissionSerializer(admission, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    elif request.method == 'DELETE':
+    def delete(self, request):
+        admission = get_object_or_404(Admission, id=request.data.get('id'))
         admission.delete()
-        return Response({'message': 'Deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({
+            "msg": "Admission deleted successfully"
+        }, status=status.HTTP_204_NO_CONTENT)

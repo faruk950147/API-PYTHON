@@ -5,5 +5,5 @@ from info.views import (
 )
 urlpatterns = [
     path('', GenericAPIView.as_view()),
-    path('admission-info/', AdmissionInfoView),
+    path('admission-info/', AdmissionInfoView.as_view()),
 ]

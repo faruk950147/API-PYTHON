@@ -5,7 +5,7 @@ from .models import Admission
 @admin.register(Admission)
 class AdmissionAdmin(admin.ModelAdmin):
     # List display in admin
-    list_display = ('name', 'dob', 'gpa', 'qualification', 'gender', 'department', 'status', 'created_at', 'updated_at')
+    list_display = ('id', 'name', 'dob', 'gpa', 'qualification', 'gender', 'department', 'status', 'created_at', 'updated_at')
     
     # Fields to filter by
     list_filter = ('qualification', 'gender', 'department', 'status')
@@ -19,7 +19,7 @@ class AdmissionAdmin(admin.ModelAdmin):
     # Field grouping in forms
     fieldsets = (
         ('Personal Information', {
-            'fields': ('name', 'dob', 'gender')
+            'fields': ('id', 'name', 'dob', 'gender')
         }),
         ('Academic Information', {
             'fields': ('gpa', 'qualification', 'department')
