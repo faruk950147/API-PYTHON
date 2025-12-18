@@ -1,9 +1,9 @@
 from django.urls import path
 from info.views import (
     GenericAPIView,
-    StudentInfoView,
+    AdmissionInfoView,
 )
 urlpatterns = [
     path('', GenericAPIView.as_view()),
-    path('student-info/', StudentInfoView.as_view()),
+    path('admission-info/', AdmissionInfoView),
 ]
