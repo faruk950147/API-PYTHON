@@ -102,9 +102,11 @@ class AdmissionInfoDeleteView(APIView):
     def delete(self, request, id):
         # get the admission by id
         admission = get_object_or_404(Admission, id=id)
+
         # delete the admission
         admission.delete()
-        # return the success message
+
+        # return success response
         return Response({
             'message': 'Admission deleted successfully'
-        }, status=status.HTTP_204_NO_CONTENT)       
+        }, status=status.HTTP_204_NO_CONTENT)
