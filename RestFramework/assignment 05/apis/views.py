@@ -9,7 +9,11 @@ from django.contrib import messages
 from apis.models import Admission
 from apis.sterilizers import AdmissionSerializer
 
-@method_decorator(cache_page(60 * 60 * 24), name='dispatch')
+# AdmissionInfoView is a class-based view that gets all admissions
+# it is used to get all admissions
+# it is a GET request
+# it is used to get all admissions
+@method_decorator(never_cache, name='dispatch')
 class AdmissionInfoView(APIView):
     # get method to get all admissions
     def get(self, request):
@@ -38,3 +42,69 @@ class AdmissionInfoView(APIView):
             'message': 'Invalid data',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+        
+# AdmissionInfoEditView is a class-based view that updates an admission
+# it is used to update an admission by id
+# it is a PUT request
+# it is used to update an admission by id
+@method_decorator(never_cache, name='dispatch')
+class AdmissionInfoEditView(APIView):
+    # put method to update an admission
+    def put(self, request, id):
+        # get the admission by id
+        admission = get_object_or_404(Admission, id=id)
+        # serialize the request data
+        serializer = AdmissionSerializer(admission, data=request.data)
+        # validate the data
+        if serializer.is_valid():
+            # save the data
+            serializer.save()
+            # return the serialized data
+            return Response({
+                'message': 'Admission updated successfully',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        # return the error message
+        return Response({
+            'message': 'Invalid data',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    # patch method to patch an admission
+    def patch(self, request, id):
+            # get the admission by id
+            admission = get_object_or_404(Admission, id=id)
+            # serialize the request data
+            serializer = AdmissionSerializer(admission, data=request.data, partial=True)
+            # validate the data
+            if serializer.is_valid():
+                # save the data
+                serializer.save()
+                # return the serialized data
+                return Response({
+                    'message': 'Admission updated successfully',
+                    'data': serializer.data
+                }, status=status.HTTP_200_OK)
+            # return the error message
+            return Response({
+                'message': 'Invalid data',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+
+# AdmissionInfoDeleteView is a class-based view that deletes an admission
+# it is used to delete an admission by id
+# it is a DELETE request
+# it is used to delete an admission by id
+@method_decorator(never_cache, name='dispatch')
+class AdmissionInfoDeleteView(APIView):
+    # delete method to delete an admission
+    def delete(self, request, id):
+        # get the admission by id
+        admission = get_object_or_404(Admission, id=id)
+        # delete the admission
+        admission.delete()
+        # return the success message
+        return Response({
+            'message': 'Admission deleted successfully'
+        }, status=status.HTTP_204_NO_CONTENT)       
