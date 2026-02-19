@@ -4,12 +4,12 @@ from rest_framework.response import Response
 
 class CourseListView(APIView):
     def get(self, request):
-        courses = [
-            {"id": 1, "name": "Mathematics", "description": "An introduction to mathematical concepts."},
-            {"id": 2, "name": "Physics", "description": "Fundamentals of physics and its applications."},
-            {"id": 3, "name": "Chemistry", "description": "Basics of chemical reactions and compounds."},
+        admission = [
+            {"id": 1, "name": "John Doe", "roll": 123456, "cgpa": 3.5},
+            {"id": 2, "name": "Jane Smith", "roll": 123457, "cgpa": 3.8},
+            {"id": 3, "name": "Jim Beam", "roll": 123458, "cgpa": 3.2},
         ]
-        return Response(courses)
+        return Response(admission)
     def post(self, request):
         return Response({"message": "POST method called"})
     
