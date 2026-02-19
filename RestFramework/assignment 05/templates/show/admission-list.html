@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %} Admission List {% endblock title %}
+
+{% block main %}
+<main class="main">
+    <div class="container">
+        <div class="row justify-content-center align-items-center mt-5">
+            <div class="col-12">
+                <h1>Admission List</h1>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>DOB</th>
+                            <th>GPA</th>
+                            <th>Qualification</th>
+                            <th>Gender</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admission-table-body">
+                        <!-- AJAX data will go here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock main %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/apis/admission-info/')
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        const tbody = document.getElementById('admission-table-body');
+        const fragment = document.createDocumentFragment();
+
+        data.forEach(admission => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${admission.name}</td>
+                <td>${admission.dob}</td>
+                <td>${admission.gpa}</td>
+                <td>${admission.qualification}</td>
+                <td>${admission.gender}</td>
+                <td>${admission.department}</td>
+                <td>${admission.status}</td>
+            `;
+            fragment.appendChild(tr);
+        });
+
+        tbody.appendChild(fragment);
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+    });
+});
+
+</script>
+{% endblock extra_scripts %}
