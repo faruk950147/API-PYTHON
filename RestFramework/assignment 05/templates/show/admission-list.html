@@ -19,7 +19,7 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody id="admission-table-body">
+                    <tbody id="admission_table_body">
                         <!-- AJAX data will go here -->
                     </tbody>
                 </table>
@@ -32,32 +32,34 @@
 {% block extra_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    fetch('/apis/admission-info/')
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        const tbody = document.getElementById('admission-table-body');
-        const fragment = document.createDocumentFragment();
-
-        data.forEach(admission => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${admission.name}</td>
-                <td>${admission.dob}</td>
-                <td>${admission.gpa}</td>
-                <td>${admission.qualification}</td>
-                <td>${admission.gender}</td>
-                <td>${admission.department}</td>
-                <td>${admission.status}</td>
-            `;
-            fragment.appendChild(tr);
+    // Load Admissions
+    function loadAdmissions() {
+        fetch('/apis/admissions/')
+        .then(res => res.json())
+        .then(data => {
+            admission_table_body.innerHTML = '';
+            data.forEach(adm => {
+                const row = document.createElement('tr');
+                row.id = `row-${adm.id}`;
+                row.innerHTML = `
+                    <td>${adm.name}</td>
+                    <td>${adm.dob}</td>
+                    <td>${adm.gpa}</td>
+                    <td>${adm.qualification}</td>
+                    <td>${adm.gender}</td>
+                    <td>${adm.department}</td>
+                    <td>${adm.status}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm edit-btn" data-id="${adm.id}">Edit</button>
+                        <button class="btn btn-danger btn-sm delete-btn" data-id="${adm.id}">Delete</button>
+                    </td>
+                `;
+                admission_table_body.appendChild(row);
+            });
         });
+    }
 
-        tbody.appendChild(fragment);
-    })
-    .catch(error => {
-        console.error('Fetch error:', error);
-    });
+    loadAdmissions();
 });
 
 </script>
