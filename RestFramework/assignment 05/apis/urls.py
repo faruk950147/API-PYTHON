@@ -1,12 +1,10 @@
 from django.urls import path
 from apis.views import (
-    AdmissionInfoView,
-    AdmissionInfoEditView,
-    AdmissionInfoDeleteView
+    AdmissionListCreateAPIView, 
+    AdmissionDetailAPIView
 )
 
 urlpatterns = [
-    path('admission-info/', AdmissionInfoView.as_view()),
-    path('admission-info/<int:id>/', AdmissionInfoEditView.as_view()),
-    path('admission-info/<int:id>/', AdmissionInfoDeleteView.as_view()),
+    path('admissions/', AdmissionListCreateAPIView.as_view()),
+    path('admissions/<int:pk>/', AdmissionDetailAPIView.as_view()),
 ]
