@@ -10,7 +10,7 @@ from apis.models import Student
 from apis.serializers import StudentSerializer
 
 class StudentsView(APIView):
-    def get(self, request, pk=None):
+    def get(self, request, pk=None, format=None):
         if pk:
             student = get_object_or_404(Student, pk=pk)
             serializer = StudentSerializer(student)
