@@ -20,7 +20,7 @@ class Student(CommonMixin):
 
     class Meta:
         ordering = ['id']
-        verbose_name_plural = '01 - Admissions'
+        verbose_name_plural = '01 - Students'
 
     def __str__(self):
-        return f'{self.name} | {self.department}'
+        return f'{self.name} | {self.dob}'
