@@ -1,6 +1,6 @@
 from django.urls import path
-from show.views import AdmissionListView
+from show.views import StudentListView
 
 urlpatterns = [
-    path('', AdmissionListView.as_view(), name='admission-list'),
+    path('', StudentListView.as_view(), name='student-list'),
 ]

@@ -1,5 +1,10 @@
-asgiref==3.11.1
-django==6.0.3
-djangorestframework==3.16.1
-sqlparse==0.5.5
-tzdata==2025.3
+asgiref==3.9.1
+Django==5.2.5
+django-cors-headers==4.7.0
+django-unfold==0.63.0
+djangorestframework==3.16.0
+djangorestframework_simplejwt==5.5.1
+PyJWT==2.10.1
+six==1.17.0
+sqlparse==0.5.3
+tzdata==2025.2

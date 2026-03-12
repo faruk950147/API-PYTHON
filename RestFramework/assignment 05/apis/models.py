@@ -8,24 +8,7 @@ class CommonMixin(models.Model):
         abstract = True
 
 
-class Admission(CommonMixin):
-    QUALIFICATION_CHOICES = (
-        ('SSC', 'SSC'),
-        ('HSC', 'HSC'),
-        ('BSc', 'BSc'),
-    )
-
-    GENDER_CHOICES = (
-        ('Male', 'Male'),
-        ('Female', 'Female'),
-    )
-
-    DEPARTMENT_CHOICES = (
-        ('CSE', 'CSE'),
-        ('EEE', 'EEE'),
-        ('BBA', 'BBA'),
-    )
-
+class Student(CommonMixin):
     STATUS_CHOICES = (
         ('Active', 'Active'),
         ('Inactive', 'Inactive'),
@@ -33,15 +16,11 @@ class Admission(CommonMixin):
 
     name = models.CharField(max_length=100)
     dob = models.DateField()
-    gpa = models.DecimalField(max_digits=3, decimal_places=2)
-    qualification = models.CharField(max_length=10, choices=QUALIFICATION_CHOICES)
-    gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
-    department = models.CharField(max_length=10, choices=DEPARTMENT_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
 
     class Meta:
         ordering = ['id']
-        verbose_name_plural = '01 - Admissions'
+        verbose_name_plural = '01 - Students'
 
     def __str__(self):
-        return f'{self.name} | {self.department}'
+        return f'{self.name} | {self.dob}'

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views import generic
-from apis.models import Admission
+from apis.models import Student
 # Create your views here.
-class AdmissionListView(generic.View):
+class StudentListView(generic.View):
     def get(self, request):
-        return render(request, 'show/admission-list.html')
+        return render(request, 'show/student-list.html')
