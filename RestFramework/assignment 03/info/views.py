@@ -1,29 +1,25 @@
-from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.shortcuts import get_object_or_404
 from info.models import Admission
 from info.serializers import AdmissionSerializer
 
-# Create your views here.
-class GenericAPIView(APIView):
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+class EndPointAPIView(APIView):
     def get(self, request):
         return Response({
             "status": "success",
             "endpoints": [
-                "http://127.0.0.1:8000/admission-info/"
+                "/admission-info/",
             ]
-        })
-
-class AdmissionInfoView(APIView):
-    def get_object(self, request):
-        try:
-            id = request.data.get('id')
-            admission = Admission.objects.get(id=id)
-            return admission
-        except Admission.DoesNotExist:
-            return None
+        }, status=status.HTTP_200_OK)
         
+        
+class AdmissionInfoView(APIView):
     def get(self, request):
         admissions = Admission.objects.all()
         serializer = AdmissionSerializer(admissions, many=True)
@@ -46,7 +42,7 @@ class AdmissionInfoView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request):
-        admission = get_object(request)
+        admission = get_object_or_404(Admission, id=request.data.get('id'))
         serializer = AdmissionSerializer(admission, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -60,7 +56,7 @@ class AdmissionInfoView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request):
-        admission = get_object(request)
+        admission = get_object_or_404(Admission, id=request.data.get('id'))
         serializer = AdmissionSerializer(admission, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -74,9 +70,8 @@ class AdmissionInfoView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request):
-        admission = get_object(request)
+        admission = get_object_or_404(Admission, id=request.data.get('id'))
         admission.delete()
         return Response({
             "msg": "Admission deleted successfully"
         }, status=status.HTTP_204_NO_CONTENT)
-        
