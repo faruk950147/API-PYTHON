@@ -23,14 +23,19 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         fields = "__all__" """
         
+        
+# Company Serializer
 class CompanyHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='company-detail')  # url field add
     
     class Meta:
         model = Company
-        fields = ['url', 'id', 'name', 'address', 'phone', 'email', 'website', 'industry','created_at', 'updated_at']
+        fields = [
+            'url', 'id', 'name', 'address', 'phone', 'email', 
+            'website', 'industry', 'created_at', 'updated_at'
+        ]
 
-
+# Department Serializer
 class DepartmentHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='department-detail')
     company = serializers.HyperlinkedRelatedField(
@@ -40,9 +45,12 @@ class DepartmentHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
     
     class Meta:
         model = Department
-        fields = ['url', 'id', 'company', 'name', 'description', 'created_at', 'updated_at']
+        fields = [
+            'url', 'id', 'company', 'name', 'description', 
+            'created_at', 'updated_at'
+        ]
 
-
+# Employee Serializer
 class EmployeeHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='employee-detail')
     company = serializers.HyperlinkedRelatedField(
@@ -57,6 +65,7 @@ class EmployeeHyperlinkedSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Employee
         fields = [
-            'url', 'id', 'company', 'department', 'first_name', 'last_name', 'email', 'phone',
-            'position', 'hire_date', 'salary', 'is_active', 'created_at', 'updated_at'
+            'url', 'id', 'company', 'department', 'name', 'email', 
+            'phone', 'position', 'hire_date', 'salary', 'status', 
+            'created_at', 'updated_at'
         ]
