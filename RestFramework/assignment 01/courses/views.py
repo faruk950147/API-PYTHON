@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,19 +16,20 @@ class EndPointsListView(APIView):
             ]
         })
 
+
 class CoursesView(APIView):
     def get_object(self, request):
+        course_id = request.data.get('id')
+        if not course_id:
+            return None
         try:
-            id = request.data.get('id')
-            course = Courses.objects.get(id=id)
-            return course
+            return Courses.objects.get(id=course_id)
         except Courses.DoesNotExist:
             return None
 
     def get(self, request):
         courses = Courses.objects.all()
         serializer = CoursesSerializer(courses, many=True)
-
         return Response({
             "msg": "Courses retrieved successfully",
             "data": serializer.data
@@ -36,33 +37,27 @@ class CoursesView(APIView):
 
     def post(self, request):
         serializer = CoursesSerializer(data=request.data)
-
         if serializer.is_valid():
             serializer.save()
             return Response({
-                "msg": "Courses created successfully",
+                "msg": "Course created successfully",
                 "data": serializer.data
             }, status=status.HTTP_201_CREATED)
-
         return Response({
             "msg": "Invalid data",
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request):
-        courses = self.get_object(request)
+        course = self.get_object(request)
+        if not course:
+            return Response({"msg": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if not courses:
-            return Response({
-                "msg": "Course not found"
-            }, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = CoursesSerializer(courses, data=request.data)
-
+        serializer = CoursesSerializer(course, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({
-                "msg": "Courses updated successfully",
+                "msg": "Course updated successfully",
                 "data": serializer.data
             }, status=status.HTTP_200_OK)
 
@@ -72,19 +67,15 @@ class CoursesView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request):
-        courses = self.get_object(request)
+        course = self.get_object(request)
+        if not course:
+            return Response({"msg": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if not courses:
-            return Response({
-                "msg": "Course not found"
-            }, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = CoursesSerializer(courses, data=request.data, partial=True)
-
+        serializer = CoursesSerializer(course, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({
-                "msg": "Courses partially updated",
+                "msg": "Course partially updated",
                 "data": serializer.data
             }, status=status.HTTP_200_OK)
 
@@ -94,15 +85,11 @@ class CoursesView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request):
-        courses = self.get_object(request)
+        course = self.get_object(request)
+        if not course:
+            return Response({"msg": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if not courses:
-            return Response({
-                "msg": "Course not found"
-            }, status=status.HTTP_404_NOT_FOUND)
-
-        courses.delete()
-
+        course.delete()
         return Response({
-            "msg": "Courses deleted successfully"
+            "msg": "Course deleted successfully"
         }, status=status.HTTP_204_NO_CONTENT)
