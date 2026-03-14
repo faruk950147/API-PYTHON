@@ -4,5 +4,5 @@ from courses.views import (
 )
 
 urlpatterns = [
-    path('', EndPointsListView.as_view)
+    path('', EndPointsListView.as_view())
 ]
