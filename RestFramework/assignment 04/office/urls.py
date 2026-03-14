@@ -1,12 +1,15 @@
-from django.urls import path
-from office.views import (
-    CompanyList,
-    DepartmentList,
-    EmployeeList
-)
+# urls.py
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from office.views import CompanyList, DepartmentList, EmployeeList
 
 urlpatterns = [
-    path('companies/', CompanyList.as_view()),
-    path('departments/', DepartmentList.as_view()),
-    path('employees/', EmployeeList.as_view()),
+    # Company endpoints
+    path('companies/', CompanyList.as_view(), name='company-list'),
+    
+    # Department endpoints
+    path('departments/', DepartmentList.as_view(), name='department-list'),
+    
+    # Employee endpoints
+    path('employees/', EmployeeList.as_view(), name='employee-list'),
 ]
