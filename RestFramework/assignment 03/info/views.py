@@ -16,6 +16,14 @@ class GenericAPIView(APIView):
         })
 
 class AdmissionInfoView(APIView):
+    def get_object(self, request):
+        try:
+            id = request.data.get('id')
+            admission = Admission.objects.get(id=id)
+            return admission
+        except Admission.DoesNotExist:
+            return None
+        
     def get(self, request):
         admissions = Admission.objects.all()
         serializer = AdmissionSerializer(admissions, many=True)
@@ -38,7 +46,7 @@ class AdmissionInfoView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request):
-        admission = get_object_or_404(Admission, id=request.data.get('id'))
+        admission = get_object(request)
         serializer = AdmissionSerializer(admission, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -52,7 +60,7 @@ class AdmissionInfoView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request):
-        admission = get_object_or_404(Admission, id=request.data.get('id'))
+        admission = get_object(request)
         serializer = AdmissionSerializer(admission, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -66,8 +74,9 @@ class AdmissionInfoView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request):
-        admission = get_object_or_404(Admission, id=request.data.get('id'))
+        admission = get_object(request)
         admission.delete()
         return Response({
             "msg": "Admission deleted successfully"
         }, status=status.HTTP_204_NO_CONTENT)
+        
