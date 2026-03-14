@@ -8,7 +8,12 @@ from info.serializers import AdmissionSerializer
 # Create your views here.
 class GenericAPIView(APIView):
     def get(self, request):
-        return Response({"status": "success"})
+        return Response({
+            "status": "success",
+            "endpoints": [
+                "http://127.0.0.1:8000/admission-info/"
+            ]
+        })
 
 class AdmissionInfoView(APIView):
     def get(self, request):

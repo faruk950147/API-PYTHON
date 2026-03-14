@@ -4,8 +4,8 @@ from datetime import date
 
 
 class CommonMixin(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
     class Meta:
         abstract = True
@@ -64,6 +64,12 @@ class Admission(CommonMixin):
         # Run full validation before saving
         self.full_clean()
         super().save(*args, **kwargs)
+        
+    class Meta:
+        db_table = "admission"
+        ordering = ["-created_at"]
+        verbose_name = "Admission"
+        verbose_name_plural = "Admission"
 
     def __str__(self):
         return f'{self.name} | {self.dob} | GPA: {self.gpa} | {self.qualification} | {self.gender} | {self.department} | {self.status}'
