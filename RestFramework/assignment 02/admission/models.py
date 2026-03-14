@@ -7,11 +7,11 @@ class Student(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    
-
     class Meta:
-        ordering = ['id']
-        verbose_name_plural = '01 - Students'
+        db_table = "Student"
+        ordering = ["-created_at"]
+        verbose_name = "Student"
+        verbose_name_plural = "Student"
 
     def __str__(self):
         return f"{self.name} ({self.roll})"

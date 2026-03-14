@@ -6,7 +6,7 @@ class Courses(models.Model):
     duration = models.CharField(max_length=50)
     
     class Meta:
-        db_na
+        db
 
     def __str__(self):
         return self.name
