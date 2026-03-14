@@ -10,7 +10,10 @@ from courses.serializers import CoursesSerializer
 class EndPointsListView(APIView):
     def get(self, request):
         return Response({
-            'status': 'success'
+            'status': 'success',
+            'endPoints': [
+                'http://127.0.0.1:8000/api/courses/'
+            ]
         })
 
 
