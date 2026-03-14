@@ -49,7 +49,6 @@ class CompaniesDetail(APIView):
         company.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
 # Department API
 class DepartmentList(APIView):
     def get(self, request):
