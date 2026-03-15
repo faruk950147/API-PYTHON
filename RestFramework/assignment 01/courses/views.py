@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -25,7 +24,7 @@ class CoursesView(APIView):
         try:
             return Courses.objects.get(id=course_id)
         except Courses.DoesNotExist:
-            return None
+             raise Http404
 
     def get(self, request):
         courses = Courses.objects.all()

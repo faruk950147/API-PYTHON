@@ -27,7 +27,7 @@ class AdmissionInfoView(APIView):
         try:
             return Admission.objects.get(id=admission_id)
         except Admission.DoesNotExist:
-            return None
+            raise Http404
         
     def get(self, request):
         admissions = Admission.objects.all()

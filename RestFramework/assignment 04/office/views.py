@@ -23,7 +23,7 @@ class CompaniesDetail(APIView):
         try:
             return Company.objects.get(pk=pk)
         except Company.DoesNotExist:
-            return None
+            raise Http404
 
     def get(self, request, pk):
         company = self.get_object(pk)
@@ -68,7 +68,7 @@ class DepartmentDetail(APIView):
         try:
             return Department.objects.get(pk=pk)
         except Department.DoesNotExist:
-            return None
+            raise Http404
 
     def get(self, request, pk):
         department = self.get_object(pk)
@@ -113,7 +113,7 @@ class EmployeeDetail(APIView):
         try:
             return Employee.objects.get(pk=pk)
         except Employee.DoesNotExist:
-            return None
+            raise Http404
 
     def get(self, request, pk):
         employee = self.get_object(pk)
