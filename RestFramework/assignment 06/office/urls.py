@@ -1,21 +1,24 @@
 # urls.py
 from django.urls import path
 from office.views import (
-    CompanyList, CompaniesDetail,
-    DepartmentList, DepartmentDetail,
-    EmployeeList, EmployeeDetail
+    CompanyListCreateView,
+    CompanyRetrieveUpdateDeleteView,
+    DepartmentListCreateView,
+    DepartmentRetrieveUpdateDeleteView,
+    EmployeeListCreateView,
+    EmployeeRetrieveUpdateDeleteView,
 )
 
 urlpatterns = [
-    # Company endpoints
-    path('companies/', CompanyList.as_view(), name='company-list'),
-    path('companies/<int:pk>/', CompaniesDetail.as_view(), name='company-detail'),
+    # Company URLs
+    path('companies/', CompanyListCreateView.as_view(), name='company-list-create'),
+    path('companies/<int:pk>/', CompanyRetrieveUpdateDeleteView.as_view(), name='company-detail'),
 
-    # Department endpoints
-    path('departments/', DepartmentList.as_view(), name='department-list'),
-    path('departments/<int:pk>/', DepartmentDetail.as_view(), name='department-detail'),
+    # Department URLs
+    path('departments/', DepartmentListCreateView.as_view(), name='department-list-create'),
+    path('departments/<int:pk>/', DepartmentRetrieveUpdateDeleteView.as_view(), name='department-detail'),
 
-    # Employee endpoints
-    path('employees/', EmployeeList.as_view(), name='employee-list'),
-    path('employees/<int:pk>/', EmployeeDetail.as_view(), name='employee-detail'),
+    # Employee URLs
+    path('employees/', EmployeeListCreateView.as_view(), name='employee-list-create'),
+    path('employees/<int:pk>/', EmployeeRetrieveUpdateDeleteView.as_view(), name='employee-detail'),
 ]
