@@ -11,6 +11,8 @@ from office.serializers import (
 
 # Company Views
 class CompanyListCreateView(generics.ListCreateAPIView):
+    ''' Get all objects for get request
+        Create objects for post request'''
     queryset = Company.objects.all()
     serializer_class = CompanyHyperlinkedSerializer
 
@@ -20,6 +22,8 @@ class CompanyRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
 # Department Views
 class DepartmentListCreateView(generics.ListCreateAPIView):
+    ''' Get all objects for get request
+        Create objects for post request'''
     queryset = Department.objects.all()
     serializer_class = DepartmentHyperlinkedSerializer
 
@@ -29,6 +33,8 @@ class DepartmentRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
 # Employee Views
 class EmployeeListCreateView(generics.ListCreateAPIView):
+    ''' Get all objects for get request
+        Create objects for post request'''
     queryset = Employee.objects.all()
     serializer_class = EmployeeHyperlinkedSerializer
 
