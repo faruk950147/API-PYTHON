@@ -1,3 +1,43 @@
+'''
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.reverse import reverse
+from official.models import Author, Tag, Post, Comment
+from official.serializers import AuthorSerializer, TagSerializer, CommentSerializer, PostSerializer
+
+# API Root
+class APIRootView(viewsets.ViewSet):
+    """
+    API Root: Main entry point
+    """
+    def list(self, request):
+        return Response({
+            'authors': reverse('author-list', request=request),
+            'tags': reverse('tag-list', request=request),
+            'posts': reverse('post-list', request=request),
+            'comments': reverse('comment-list', request=request),
+        })
+
+
+# Individual Model ViewSets
+class AuthorViewSet(viewsets.ModelViewSet):
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+
+class TagViewSet(viewsets.ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+
+class PostViewSet(viewsets.ModelViewSet):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+'''
+
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -11,7 +51,7 @@ from official.serializers import (
     CommentSerializer
 )
 
-# API ROOT
+# ================= API ROOT =================
 class APIRootView(viewsets.ViewSet):
     def list(self, request):
         return Response({
@@ -21,8 +61,7 @@ class APIRootView(viewsets.ViewSet):
             'comments': reverse('comment-list', request=request),
         })
 
-
-# Author
+# ================= Author =================
 class AuthorViewSet(viewsets.ModelViewSet):
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
@@ -30,15 +69,13 @@ class AuthorViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         obj = Author.objects.get(pk=pk)
         serializer = self.get_serializer(obj)
-
         return Response({
             "status": True,
             "message": "Author Details",
             "data": serializer.data
         })
 
-
-# Tag
+# ================= Tag =================
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -46,15 +83,13 @@ class TagViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         obj = Tag.objects.get(pk=pk)
         serializer = self.get_serializer(obj)
-
         return Response({
             "status": True,
             "message": "Tag Details",
             "data": serializer.data
         })
 
-
-# Post
+# ================= Post =================
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -62,38 +97,58 @@ class PostViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         obj = Post.objects.get(pk=pk)
         serializer = self.get_serializer(obj)
-
         return Response({
             "status": True,
             "message": "Post Details",
             "data": serializer.data
         })
 
-    # Extra: Post → Comments
+    # Custom: post -> all comments
     @action(detail=True, methods=['get'])
     def comments(self, request, pk=None):
         post = Post.objects.get(pk=pk)
         comments = post.comment_set.all()
         serializer = CommentSerializer(comments, many=True)
-
         return Response({
             "status": True,
-            "message": "Post Comments",
+            "message": f"All Comments for Post {pk}",
             "data": serializer.data
         })
 
+    # Custom: post -> specific comment
+    @action(detail=True, methods=['get'], url_path='comments/(?P<comment_id>[^/.]+)')
+    def comment_detail(self, request, pk=None, comment_id=None):
+        post = Post.objects.get(pk=pk)
+        comment = post.comment_set.get(pk=comment_id)
+        serializer = CommentSerializer(comment)
+        return Response({
+            "status": True,
+            "message": f"Comment {comment_id} for Post {pk}",
+            "data": serializer.data
+        })
 
-# Comment
+# ================= Comment =================
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
 
+    # Retrieve single comment
     def retrieve(self, request, pk=None):
         obj = Comment.objects.get(pk=pk)
         serializer = self.get_serializer(obj)
-
         return Response({
             "status": True,
             "message": "Comment Details",
+            "data": serializer.data
+        })
+
+    # Custom: all comments for a specific post
+    @action(detail=False, methods=['get'], url_path='post/(?P<post_id>[^/.]+)')
+    def post_comments(self, request, post_id=None):
+        comments = Comment.objects.filter(post_id=post_id)
+        serializer = CommentSerializer(comments, many=True)
+        return Response({
+            "status": True,
+            "message": f"Comments for Post {post_id}",
             "data": serializer.data
         })
