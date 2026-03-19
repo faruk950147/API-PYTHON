@@ -1,5 +1,5 @@
 from django.urls import path
-from office.views import (
+from official.views import (
     APIRoot,
 )
 

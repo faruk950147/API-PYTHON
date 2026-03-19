@@ -1,9 +1,3 @@
 from django.contrib import admin
-from office.models import Employee
+from official.models import *
 
-@admin.register(Employee)
-class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'email', 'department', 'dob', 'created_at', 'updated_at')
-    search_fields = ('name', 'email', 'department')
-    list_filter = ('department', 'created_at')
-    ordering = ('-id',)
