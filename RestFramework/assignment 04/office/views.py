@@ -5,7 +5,7 @@ from django.http import Http404
 from office.models import Company, Department, Employee
 from office.serializers import CompanyHyperlinkedSerializer, DepartmentHyperlinkedSerializer, EmployeeHyperlinkedSerializer
 
-# ----------------- Company API ----------------- #
+# Company API 
 class CompanyList(APIView):
     """
     API view to list all companies or create a new company.
@@ -71,7 +71,7 @@ class CompaniesDetail(APIView):
         company.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# ----------------- Department API ----------------- #
+# Department API
 class DepartmentList(APIView):
     """
     API view to list all departments or create a new department.
@@ -137,7 +137,7 @@ class DepartmentDetail(APIView):
         department.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# ----------------- Employee API ----------------- #
+# Employee API
 class EmployeeList(APIView):
     """
     API view to list all employees or create a new employee.

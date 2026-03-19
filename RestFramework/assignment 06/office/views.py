@@ -11,7 +11,7 @@ from office.serializers import (
     EmployeeHyperlinkedSerializer
 )
 
-# ----------------- API Root ----------------- #
+# API Root
 class APIRoot(APIView):
     """
     API Root: Main entry point for the Office app.
@@ -28,7 +28,7 @@ class APIRoot(APIView):
             "employees": reverse("employee-list", request=request, format=format),
         })
 
-# ----------------- Company Views ----------------- #
+# Company Views 
 class CompanyListCreateView(generics.ListCreateAPIView):
     """
     ListCreateAPIView for Company:
@@ -51,7 +51,7 @@ class CompanyRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Company.objects.all()
     serializer_class = CompanyHyperlinkedSerializer
 
-# ----------------- Department Views ----------------- #
+# Department Views
 class DepartmentListCreateView(generics.ListCreateAPIView):
     """
     ListCreateAPIView for Department:
@@ -74,7 +74,7 @@ class DepartmentRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Department.objects.all()
     serializer_class = DepartmentHyperlinkedSerializer
 
-# ----------------- Employee Views ----------------- #
+# Employee Views
 class EmployeeListCreateView(generics.ListCreateAPIView):
     """
     ListCreateAPIView for Employee:
