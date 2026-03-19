@@ -1,0 +1,207 @@
+Django REST Framework (DRF) – Complete Notes (Bangla)
+
+=======================================
+
+Generic Views
+
+=======================================
+
+1. Generic Views কী?
+
+DRF এর pre-built class-based views
+
+খুব কম কোডে CRUD API বানানো যায়
+
+Model এর সাথে directly map করে
+
+2. কেন ব্যবহার করবো?
+
+কম কোড
+
+reusable logic
+
+fast development
+
+built-in features (pagination, filtering, permissions)
+
+3. Common Generic Views
+View	কাজ
+ListAPIView	সব data দেখায় (GET)
+CreateAPIView	নতুন data create (POST)
+ListCreateAPIView	GET + POST
+RetrieveAPIView	single data (GET)
+UpdateAPIView	update (PUT/PATCH)
+DestroyAPIView	delete
+RetrieveUpdateDestroyAPIView	GET + PUT + DELETE
+4. Basic Structure
+from rest_framework import generics
+
+class MyView(generics.ListCreateAPIView):
+    queryset = Model.objects.all()
+    serializer_class = MySerializer
+5. Important Attributes
+queryset
+queryset = Product.objects.all()
+serializer_class
+serializer_class = ProductSerializer
+permission_classes
+permission_classes = [IsAuthenticated]
+lookup_field
+lookup_field = 'slug'
+6. Important Methods
+get_queryset()
+def get_queryset(self):
+    return Product.objects.filter(user=self.request.user)
+
+সবসময় self.queryset ব্যবহার না করে get_queryset() use করা উচিত
+
+get_object()
+def get_object(self):
+    return Product.objects.get(id=self.kwargs['id'])
+get_serializer_class()
+def get_serializer_class(self):
+    if self.request.user.is_staff:
+        return AdminSerializer
+    return UserSerializer
+7. Save Hooks
+perform_create()
+def perform_create(self, serializer):
+    serializer.save(user=self.request.user)
+perform_update()
+def perform_update(self, serializer):
+    serializer.save()
+perform_destroy()
+def perform_destroy(self, instance):
+    instance.delete()
+8. N+1 Query Problem (Performance)
+Problem:
+
+বারবার database hit হয়
+
+Solution:
+
+ForeignKey / OneToOne
+
+.select_related("user")
+
+ManyToMany
+
+.prefetch_related("categories")
+
+Combined
+
+def get_queryset(self):
+    return Product.objects.select_related("user").prefetch_related("tags")
+9. Filtering
+def filter_queryset(self, queryset):
+    category = self.request.GET.get('category')
+    if category:
+        queryset = queryset.filter(category=category)
+    return queryset
+10. Pagination
+pagination_class = PageNumberPagination
+
+Disable:
+
+pagination_class = None
+11. URL Usage
+from django.urls import path
+
+path('products/', MyView.as_view(), name='product-list')
+12. Shortcut Usage
+path(
+    'users/',
+    ListCreateAPIView.as_view(
+        queryset=User.objects.all(),
+        serializer_class=UserSerializer
+    )
+)
+Final Summary
+
+Generic Views = ready-made CRUD API
+
+override করে custom logic add করা যায়
+
+performance optimize করা জরুরি
+
+Pro Tips
+
+সবসময় get_queryset() use করো
+
+বড় project এ Generic View + Mixins best
+
+select_related() / prefetch_related() use করো
+
+custom logic হলে method override করো
+
+========================================
+
+Mixins
+
+========================================
+
+1. Mixins কী?
+
+ছোট ছোট reusable class
+
+নির্দিষ্ট কাজের জন্য ব্যবহার হয়
+
+সরাসরি .get(), .post() দেয় না
+
+action methods দেয়
+
+2. Mixin Methods
+Mixin	Method	কাজ
+ListModelMixin	.list()	list দেখায়
+CreateModelMixin	.create()	object তৈরি
+RetrieveModelMixin	.retrieve()	single object
+UpdateModelMixin	.update()	update
+DestroyModelMixin	.destroy()	delete
+3. Concrete Generic Views (Mixins-based)
+View	Methods	Mixins Used	কাজ
+CreateAPIView	POST	CreateModelMixin	create only
+ListAPIView	GET	ListModelMixin	list only
+RetrieveAPIView	GET	RetrieveModelMixin	single read
+UpdateAPIView	PUT/PATCH	UpdateModelMixin	update
+DestroyAPIView	DELETE	DestroyModelMixin	delete
+ListCreateAPIView	GET, POST	List + Create	list + create
+RetrieveUpdateAPIView	GET, PUT	Retrieve + Update	read + update
+RetrieveDestroyAPIView	GET, DELETE	Retrieve + Destroy	read + delete
+RetrieveUpdateDestroyAPIView	ALL	All mixins	full CRUD
+4. Custom Mixins Example
+class MultipleFieldLookupMixin:
+    def get_object(self):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)
+
+        filter = {
+            field: self.kwargs[field]
+            for field in self.lookup_fields
+            if self.kwargs.get(field)
+        }
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+Usage
+class RetrieveUserView(MultipleFieldLookupMixin, generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    lookup_fields = ['account', 'username']
+Tips
+
+Mixins = modular behavior
+
+Generic Views = fast CRUD API
+
+Custom mixins = reusable logic
+
+বড় project এ consistency maintain করা সহজ
+
+Final Understanding
+
+Generic Views + Mixins = DRF এর সবচেয়ে powerful combo
+
+কম কোডে scalable API তৈরি করা যায়
+
+production level performance optimize করা সম্ভব
