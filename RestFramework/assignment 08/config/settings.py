@@ -26,8 +26,10 @@ SECRET_KEY = 'django-insecure-u)ylbfea-smy=_f+$#(tyg40tl2kv^m@p9)hz18m5d-9j=+9=5
 DEBUG = True
 
 ALLOWED_HOSTS = []
-CORS_ALLOW_ALL_ORIGINS = True
-
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -37,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 3rd party
     'rest_framework',
     'corsheaders',
     # custom app
@@ -46,7 +49,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    #django cors header configuration
+    # django cors header configuration
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

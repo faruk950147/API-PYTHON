@@ -3,7 +3,7 @@ from office.models import Employee
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'email', 'department', 'dob', 'created_at', 'updated_at')
+    list_display = ('id', 'name', 'email', 'department', 'dob', 'created_at', 'updated_at')
     search_fields = ('name', 'email', 'department')
     list_filter = ('department', 'created_at')
-    ordering = ('-created_at',)
+    ordering = ('-id',)
