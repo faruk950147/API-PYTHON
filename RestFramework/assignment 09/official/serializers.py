@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from official.models import Author, Tag, Post, Comment
+from official.models import Post
 
 
 
