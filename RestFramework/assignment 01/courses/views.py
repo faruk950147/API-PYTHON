@@ -137,9 +137,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import Courses
-from .serializers import CoursesSerializer
-from .pagination import CoursePagination
+from courses.models import Courses
+from courses.serializers import CoursesSerializer
+from courses.pagination import CoursePagination
 from django.db.models import Q
 
 class CoursesView(APIView):
@@ -247,8 +247,8 @@ class CoursesView(APIView):
 '''      
 from rest_framework import generics, status, filters
 from rest_framework.response import Response
-from .models import Courses
-from .serializers import CoursesSerializer
+from courses.models import Courses
+from courses.serializers import CoursesSerializer
 from rest_framework.pagination import PageNumberPagination
 
 # Custom Pagination
