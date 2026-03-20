@@ -159,8 +159,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.reverse import reverse
 
-from .models import Author, Tag, Post, Comment
-from .serializers import (
+from official.models import Author, Tag, Post, Comment
+from official.serializers import (
     AuthorSerializer,
     TagSerializer,
     PostSerializer,
