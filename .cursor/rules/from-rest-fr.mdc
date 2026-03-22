@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+from rest_framework import APIView
+from official.models import Post
+from official.serializers import PostSerializer
+
+# CreateAPIView
