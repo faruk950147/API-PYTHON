@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     # custom app
-    'official'
+    'account.apps.AccountConfig',
+    'official.apps.OfficialConfig',
 ]
 
 MIDDLEWARE = [
