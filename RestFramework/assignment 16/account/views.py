@@ -1,10 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.authtoken.views import Token, obtain_auth_token 
-
-# Create your views here.
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework import status
 
 class CustomAuthToken(APIView):
+    serializer_class = AuthTokenSerializer
+
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -14,4 +16,4 @@ class CustomAuthToken(APIView):
             'token': token.key,
             'user_id': user.pk,
             'email': user.email
-        })
+        }, status=status.HTTP_200_OK)
