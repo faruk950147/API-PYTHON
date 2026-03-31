@@ -12,7 +12,7 @@ wheels = [
 ]
 
 [[package]]
-name = "assignment-08"
+name = "assignment-16"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
