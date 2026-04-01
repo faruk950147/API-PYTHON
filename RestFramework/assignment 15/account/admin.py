@@ -5,11 +5,11 @@ from account.models import User, OTP
 class UserAdmin(BaseUserAdmin):
     list_display = ('id', 'username', 'email', 'phone', 'country', 'city', 'home_city', 'zip_code', 
                     'address', 'is_active', 'is_superuser', 'is_staff', 'created_at', 'updated_at', 
-                    'image_tag')
+                    'last_login', 'image_tag')
     search_fields = ('username', 'email', 'phone')
     ordering = ('id',)
     # static readonly fields
-    readonly_fields = ('image_tag',)
+    readonly_fields = ('image_tag', 'last_login') # you can add more fields here
 
     fieldsets = (
         (None, {'fields': ('username', 'email', 'phone', 'password', 'country', 
