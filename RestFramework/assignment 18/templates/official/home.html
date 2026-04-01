@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %} Admission List {% endblock title %}
+
+{% block main %}
+<main class="main">
+    <div class="container">
+        <div class="row justify-content-center align-items-center mt-5">
+            <div class="col-12">
+                <h1>Admission List</h1>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>DOB</th>
+                            <th>GPA</th>
+                            <th>Qualification</th>
+                            <th>Gender</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admission_table_body">
+                        <!-- AJAX data will go here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock main %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Load Employees
+    function loadapi() {
+        fetch('/api/office/employees/')
+        .then(res => res.json())
+        .then(data => {
+            employee_table_body.innerHTML = '';
+            data.forEach(emp => {
+                const row = document.createElement('tr');
+                row.id = `row-${emp.id}`;
+                row.innerHTML = `
+                    <td>${emp.name}</td>
+                    <td>${emp.dob}</td>
+                    <td>${emp.phone}</td>
+                    <td>${emp.email}</td>
+                    <td>${emp.role}</td>
+                    <td>${emp.position}</td>
+                    <td>${emp.salary}</td>
+                    <td>${emp.status}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm edit-btn" data-id="${emp.id}">Edit</button>
+                        <button class="btn btn-danger btn-sm delete-btn" data-id="${emp.id}">Delete</button>
+                    </td>
+                `;
+                employee_table_body.appendChild(row);
+            });
+        });
+    }
+
+    loadapi();
+});
+
+</script>
+{% endblock extra_scripts %}
