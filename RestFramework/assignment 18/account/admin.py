@@ -4,7 +4,7 @@ from account.models import User, OTP
 
 class UserAdmin(BaseUserAdmin):
     list_display = ('id', 'username', 'email', 'phone', 'country', 'city', 'home_city', 'zip_code', 
-                    'address', 'is_active', 'is_superuser', 'is_staff', 'created_at', 'updated_at', 
+                    'address', 'is_active', 'is_superuser', 'is_staff', 'is_verified', 'created_at', 'updated_at', 
                     'last_login', 'image_tag')
     search_fields = ('username', 'email', 'phone')
     ordering = ('id',)
@@ -14,7 +14,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'email', 'phone', 'password', 'country', 
                            'city', 'home_city', 'zip_code', 'address', 'image_tag')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_verified', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login',)}),
     )
 
