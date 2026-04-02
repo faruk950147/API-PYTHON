@@ -1,3 +1,4 @@
+# models.py
 from django.db import models, transaction
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.contrib.auth.validators import UnicodeUsernameValidator
@@ -5,7 +6,7 @@ from django.core.validators import RegexValidator
 from django.utils.html import mark_safe
 from django.utils import timezone
 from datetime import timedelta
-import hashlib, hmac, secrets
+import hashlib, hmac, secrets, random
 from django.conf import settings
 
 # =========================
@@ -118,7 +119,7 @@ class OTP(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="otps")
     otp_type = models.CharField(max_length=20, choices=OTP_TYPE_CHOICES)
     otp_hash = models.CharField(max_length=64)
-    otp_salt = models.CharField(max_length=16)  # added salt
+    otp_salt = models.CharField(max_length=16)
     is_used = models.BooleanField(default=False)
     attempts = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -172,7 +173,13 @@ class OTP(models.Model):
         return hashlib.sha256((otp + salt + settings.OTP_SECRET_KEY).encode()).hexdigest()
 
     @classmethod
-    def create_otp(cls, user, otp, otp_type):
+    def generate_otp(cls):
+        """Generate 6-digit random OTP"""
+        return f"{random.randint(100000, 999999)}"
+
+    @classmethod
+    def create_otp(cls, user, otp_type, otp=None):
+        """Auto-generate OTP if not provided and store hashed version"""
         with transaction.atomic():
             last_otp = cls.objects.filter(user=user, otp_type=otp_type).select_for_update().order_by("-created_at").first()
             if last_otp and timezone.now() < last_otp.created_at + timedelta(seconds=60):
@@ -180,5 +187,14 @@ class OTP(models.Model):
 
             cls.objects.filter(user=user, otp_type=otp_type, is_used=False).update(is_used=True)
 
+            if otp is None:
+                otp = cls.generate_otp()
+
             salt = secrets.token_hex(8)
-            return cls.objects.create(user=user, otp_type=otp_type, otp_salt=salt, otp_hash=cls.hash_otp(otp, salt))
+            otp_instance = cls.objects.create(
+                user=user,
+                otp_type=otp_type,
+                otp_salt=salt,
+                otp_hash=cls.hash_otp(otp, salt)
+            )
+            return otp_instance, otp
