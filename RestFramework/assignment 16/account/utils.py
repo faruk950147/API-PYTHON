@@ -1,19 +1,12 @@
-import random
+import threading
 from django.core.mail import send_mail
-from account.models import OTP
+from django.conf import settings
 
-def generate_otp():
-    return str(random.randint(100000, 999999))  # 6-digit OTP
+def send_otp_email(user, otp):
+    subject = "Your OTP Code"
+    message = f"Hello {user.username},\n\nYour OTP is: {otp}\nThis OTP will expire in 5 minutes."
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [user.email]
 
-def send_otp_email(user):
-    otp = generate_otp()
-    otp_hash = OTP.hash_otp(otp)
-    OTP.objects.create(user=user, otp_hash=otp_hash)
-
-    subject = "Your Secure OTP Code"
-    message = f"""
-        Your OTP Code is: {otp}
-
-        This code is valid for 5 minutes and can only be used once.
-    """
-    send_mail(subject, message, None, [user.email], fail_silently=False)
+    # Threaded email sending
+    threading.Thread(target=send_mail, args=(subject, message, from_email, recipient_list)).start()
