@@ -1,21 +1,13 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model
 from account.models import OTP
-import random
+from account.utils import send_otp_email
 
 User = get_user_model()
 
 # Signup Serializer
-from rest_framework import serializers
-from django.contrib.auth import get_user_model
-from account.models import OTP
-from account.utils import send_otp_email
-from django.core.exceptions import ValidationError
-import random
-
-User = get_user_model()
-
 class SignupSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
 
     class Meta:
@@ -31,16 +23,35 @@ class SignupSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password2')
         user = User.objects.create_user(**validated_data, is_active=True, is_verified=False)
-        try:
-            send_otp_email(user)
-        except ValidationError as e:
-            # OTP generate failed but user created
-            # We will handle proper response in API view
-            user._otp_error = e.messages[0]
+        
+        # OTP Generate & Email
+        otp_instance, otp = OTP.create_otp(user, otp_type="register")
+        send_otp_email(user, otp)
+        
         return user
 
 # OTP Verification Serializer
-class OTPVerifySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OTP
-        fields = [ 'otp_hash']
+class OTPVerifySerializer(serializers.Serializer):
+    email = serializers.EmailField(write_only=True)
+    hash_otp = serializers.CharField(max_length=6, write_only=True)  # user input OTP
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        hash_otp = attrs.get('hash_otp')
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found")
+
+        # Get the latest OTP for this user and type "register"
+        try:
+            otp_instance = OTP.objects.filter(user=user, otp_type="register").order_by("-created_at")[0]
+        except IndexError:
+            raise serializers.ValidationError("No OTP found for this user")
+
+        result = otp_instance.verify_otp(hash_otp)  # verify_otp internally hashes it
+        if result != "success":
+            raise serializers.ValidationError(result)
+
+        return attrs

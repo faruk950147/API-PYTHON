@@ -32,16 +32,13 @@ class SignupAPIView(APIView):
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            try:
-                send_otp_email(user)
-            except ValidationError as e:
-                # OTP generate failed but user created
-                return Response({"detail": "User created, but OTP not sent: " + e.messages[0]}, status=status.HTTP_201_CREATED)
-            return Response({"detail": "User created, OTP sent"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        # OTP sending is already handled in serializer
+        otp_error = getattr(user, "_otp_error", None)
+        if otp_error:
+            return Response({"detail": f"User created, but OTP not sent: {otp_error}"}, status=status.HTTP_201_CREATED)
+        return Response({"detail": "User created, OTP sent"}, status=status.HTTP_201_CREATED)
 
 # OTP Verify APIView
 class OTPVerifyAPIView(APIView):
@@ -49,8 +46,7 @@ class OTPVerifyAPIView(APIView):
 
     def post(self, request):
         serializer = OTPVerifySerializer(data=request.data)
-        if serializer.is_valid():
-            return Response({"detail": "OTP verified successfully"}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        return Response({"detail": "OTP verified successfully"}, status=status.HTTP_200_OK)
 
 # Login APIView
