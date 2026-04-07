@@ -1,12 +1,12 @@
 from django.db import models, transaction
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.core.validators import RegexValidator
-from django.utils.html import mark_safe
+from django.core.validators import RegexValidator, validate_email
+from django.utils.html import format_html
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
-import hashlib, hmac, secrets
+import hashlib, hmac, secrets, re
 
 # =========================
 # Validators
@@ -16,15 +16,15 @@ phone_validator = RegexValidator(r"^\+?\d{10,15}$", "Enter a valid phone number"
 # =========================
 # User Manager
 # =========================
-class Manager(BaseUserManager):
+class UserManager(BaseUserManager):
 
     def normalize_phone(self, phone):
-        phone = phone.replace(" ", "").strip()
+        phone = re.sub(r"\s+", "", phone)
         if phone.startswith("+880"):
             return phone
-        elif phone.startswith("880"):
+        if phone.startswith("880"):
             return "+" + phone
-        elif phone.startswith("01"):
+        if phone.startswith("01"):
             return "+880" + phone[1:]
         return phone
 
@@ -44,7 +44,6 @@ class Manager(BaseUserManager):
             user.set_password(password)
         else:
             user.set_unusable_password()
-
         user.save(using=self._db)
         return user
 
@@ -66,154 +65,172 @@ class Manager(BaseUserManager):
 # =========================
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=150, unique=True, validators=[UnicodeUsernameValidator()])
-    email = models.EmailField(unique=True, db_index=True)
+    email = models.EmailField(unique=True, db_index=True, validators=[validate_email])
     phone = models.CharField(max_length=15, unique=True, validators=[phone_validator], db_index=True)
 
+    # Profile information photo
     image = models.ImageField(upload_to="users/", blank=True, null=True)
 
-    country = models.CharField(max_length=150, blank=True, null=True, db_index=True)
-    city = models.CharField(max_length=150, blank=True, null=True, db_index=True)
+    # Profile information location
+    country = models.CharField(max_length=150, blank=True, null=True)
+    city = models.CharField(max_length=150, blank=True, null=True)
     home_city = models.CharField(max_length=150, blank=True, null=True)
     zip_code = models.CharField(max_length=20, blank=True, null=True)
-    address = models.TextField(max_length=500, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
 
+    # Status
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
 
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    # Chat system
+    is_online = models.BooleanField(default=False)
+    last_seen = models.DateTimeField(blank=True, null=True)
+    last_active = models.DateTimeField(auto_now=True)
+
+    # Time
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = Manager()
+    objects = UserManager()
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email", "phone"]
 
     class Meta:
+        verbose_name = "01. User"
         verbose_name_plural = "01. Users"
         db_table = "user"
         ordering = ["-created_at"]
-        indexes = [models.Index(fields=["country", "city"])]
+        indexes = [
+            models.Index(fields=["country", "city"]),
+            models.Index(fields=["created_at"]),
+        ]
 
     def __str__(self):
-        return self.username
+        return self.username or str(self.id)
+
+    # =========================
+    # Utility Methods
+    # =========================
+    def get_identifier(self):
+        return self.email or self.phone or self.username
+
+    def mark_online(self):
+        self.__class__.objects.filter(pk=self.pk).update(
+            is_online=True,
+            last_seen=timezone.now()
+        )
+
+    def mark_offline(self):
+        self.__class__.objects.filter(pk=self.pk).update(
+            is_online=False,
+            last_seen=timezone.now()
+        )
 
     @property
     def image_tag(self):
         if self.image and hasattr(self.image, "url"):
-            return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />')
-        return mark_safe("<span>No Image</span>")
+            return format_html('<img src="{}" width="50" height="50" />', self.image.url)
+        return "No Image"
+
+    def save(self, *args, **kwargs):
+        if self.email:
+            self.email = self.__class__.objects.normalize_email(self.email)
+        if self.phone:
+            self.phone = self.__class__.objects.normalize_phone(self.phone)
+        super().save(*args, **kwargs)
+
 
 # =========================
 # OTP Model
 # =========================
 class OTP(models.Model):
-
-    OTP_EXPIRY_MINUTES = 5
-    RESEND_INTERVAL_SECONDS = 60
-    MAX_USE_COUNT = 5
-
-    OTP_TYPE_CHOICES = (
-        ("register", "Register"),
-        ("login", "Login"),
-        ("reset", "Password Reset"),
-    )
+    OTP_LENGTH = getattr(settings, "OTP_LENGTH", 6)
+    OTP_EXPIRY_MINUTES = getattr(settings, "OTP_EXPIRY_MINUTES", 5)
+    RESEND_INTERVAL_SECONDS = getattr(settings, "OTP_RESEND_INTERVAL", 60)
+    MAX_USE_COUNT = getattr(settings, "OTP_MAX_USE_COUNT", 5)
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="otps")
-    otp_type = models.CharField(max_length=20, choices=OTP_TYPE_CHOICES)
     otp_hash = models.CharField(max_length=64)
     otp_salt = models.CharField(max_length=16)
+
     is_used = models.BooleanField(default=False)
     used_count = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
+        verbose_name = "02. OTP"
         verbose_name_plural = "02. OTPs"
         db_table = "otp"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["user", "created_at"]),
-            models.Index(fields=["user", "otp_type", "created_at"]),
-            models.Index(fields=["user", "otp_type", "is_used"]),
+            models.Index(fields=["user", "is_used", "created_at"]),
         ]
 
-    # =========================
-    # Status Check
-    # =========================
+    def __str__(self):
+        return f"{self.user_id}"
+
     def is_expired(self):
         return timezone.now() > self.created_at + timedelta(minutes=self.OTP_EXPIRY_MINUTES)
 
     def is_valid(self):
         return not self.is_used and self.used_count < self.MAX_USE_COUNT and not self.is_expired()
 
-    # =========================
-    # Verify OTP (Race-safe)
-    # =========================
+    @staticmethod
+    def response(success, code, message):
+        return {"success": success, "code": code, "message": message}
+
     def verify_otp(self, otp):
-        if not otp.isdigit() or len(otp) != 6:
-            return "invalid"
+        if not otp.isdigit() or len(otp) != self.OTP_LENGTH:
+            return self.response(False, "invalid", "Invalid OTP")
 
         with transaction.atomic():
-            otp_obj = OTP.objects.select_for_update().get(id=self.id)
+            otp_obj = OTP.objects.select_for_update().filter(id=self.id).first()
+            if not otp_obj:
+                return self.response(False, "invalid", "OTP not found")
 
             if otp_obj.used_count >= self.MAX_USE_COUNT:
-                return "Too many used count. Please try again later."
+                return self.response(False, "blocked", "Too many attempts")
 
             if not otp_obj.is_valid():
-                return "Invalid or expired"
+                return self.response(False, "expired", "OTP expired")
 
-            hashed_otp = OTP.hash_otp(otp, otp_obj.otp_salt)
-
-            if hmac.compare_digest(hashed_otp, otp_obj.otp_hash):
+            hashed = OTP.hash_otp(otp, otp_obj.otp_salt)
+            if hmac.compare_digest(hashed, otp_obj.otp_hash):
                 otp_obj.is_used = True
-                otp_obj.used_count += 1
-
-                if otp_obj.otp_type == "register" and not otp_obj.user.is_verified:
+                otp_obj.save(update_fields=["is_used"])
+                if not otp_obj.user.is_verified:
                     otp_obj.user.is_verified = True
                     otp_obj.user.save(update_fields=["is_verified"])
-
-                otp_obj.save(update_fields=["is_used", "used_count"])
-                return "success"
+                return self.response(True, "success", "OTP verified")
 
             otp_obj.used_count += 1
             otp_obj.save(update_fields=["used_count"])
 
-        return "invalid"
+        return self.response(False, "invalid", "Wrong OTP")
 
-    # =========================
-    # Hash OTP
-    # =========================
     @staticmethod
     def hash_otp(otp, salt):
-        return hashlib.sha256(f"{otp}{salt}{settings.OTP_SECRET_KEY}".encode()).hexdigest()
+        secret = getattr(settings, "OTP_SECRET_KEY", "default_secret")
+        return hashlib.sha256(f"{otp}{salt}{secret}".encode()).hexdigest()
 
-    # =========================
-    # Generate OTP
-    # =========================
     @classmethod
     def generate_otp(cls):
-        return ''.join(secrets.choice("0123456789") for _ in range(6))
+        return ''.join(secrets.choice("0123456789") for _ in range(cls.OTP_LENGTH))
 
-    # =========================
-    # Create OTP
-    # =========================
     @classmethod
-    def create_otp(cls, user, otp_type, otp=None):
+    def create_otp(cls, user, otp=None):
         with transaction.atomic():
-            qs = cls.objects.select_for_update().filter(user=user, otp_type=otp_type).order_by("-created_at")
-            last_otp = qs[0] if qs else None
+            last_otp = cls.objects.select_for_update().filter(user=user, is_used=False).order_by("-created_at").first()
 
-            if last_otp and timezone.now() < last_otp.created_at + timedelta(seconds=cls.RESEND_INTERVAL_SECONDS):
-                remaining = cls.RESEND_INTERVAL_SECONDS - (timezone.now() - last_otp.created_at).seconds
-                raise ValueError(f"Wait {remaining} seconds before requesting another OTP")
+            if last_otp:
+                diff = int((timezone.now() - last_otp.created_at).total_seconds())
+                if diff < cls.RESEND_INTERVAL_SECONDS:
+                    remaining = cls.RESEND_INTERVAL_SECONDS - diff
+                    raise ValueError(f"Wait {remaining} seconds before requesting new OTP")
 
-            # Expire old OTPs
-            cls.objects.filter(
-                user=user,
-                otp_type=otp_type,
-                is_used=False,
-                created_at__gte=timezone.now() - timedelta(minutes=cls.OTP_EXPIRY_MINUTES)
-            ).update(is_used=True)
+            cls.objects.filter(user=user, is_used=False).update(is_used=True)
 
             if otp is None:
                 otp = cls.generate_otp()
@@ -221,12 +238,7 @@ class OTP(models.Model):
             salt = secrets.token_hex(8)
             otp_instance = cls.objects.create(
                 user=user,
-                otp_type=otp_type,
                 otp_salt=salt,
                 otp_hash=cls.hash_otp(otp, salt)
             )
             return otp_instance, otp
-    
-
-    def __str__(self):
-        return f"{self.user.username} - {self.otp_type}"
