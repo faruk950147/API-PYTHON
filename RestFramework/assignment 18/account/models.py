@@ -61,17 +61,27 @@ class UserManager(BaseUserManager):
         return self.create_user(username, email, phone, password, **extra_fields)
 
 # =========================
-# User Model
+# USER MODEL
 # =========================
 class User(AbstractBaseUser, PermissionsMixin):
-    username = models.CharField(max_length=150, unique=True, validators=[UnicodeUsernameValidator()])
-    email = models.EmailField(unique=True, db_index=True, validators=[validate_email])
-    phone = models.CharField(max_length=15, unique=True, validators=[phone_validator], db_index=True)
 
-    # Profile information photo
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[UnicodeUsernameValidator()]
+    )
+
+    email = models.EmailField(unique=True, db_index=True)
+    phone = models.CharField(
+        max_length=15,
+        unique=True,
+        validators=[phone_validator],
+        db_index=True
+    )
+
+    # Profile
     image = models.ImageField(upload_to="users/", blank=True, null=True)
 
-    # Profile information location
     country = models.CharField(max_length=150, blank=True, null=True)
     city = models.CharField(max_length=150, blank=True, null=True)
     home_city = models.CharField(max_length=150, blank=True, null=True)
@@ -86,7 +96,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Chat system
     is_online = models.BooleanField(default=False)
     last_seen = models.DateTimeField(blank=True, null=True)
-    last_active = models.DateTimeField(auto_now=True)
+    last_active = models.DateTimeField(default=timezone.now)
 
     # Time
     created_at = models.DateTimeField(auto_now_add=True)
@@ -98,8 +108,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["email", "phone"]
 
     class Meta:
-        verbose_name = "01. User"
-        verbose_name_plural = "01. Users"
         db_table = "user"
         ordering = ["-created_at"]
         indexes = [
@@ -108,37 +116,45 @@ class User(AbstractBaseUser, PermissionsMixin):
         ]
 
     def __str__(self):
-        return self.username or str(self.id)
+        return self.username
 
     # =========================
-    # Utility Methods
+    # UTIL METHODS
     # =========================
+
     def get_identifier(self):
-        return self.email or self.phone or self.username
+        return self.username or self.email or self.phone
 
     def mark_online(self):
-        self.__class__.objects.filter(pk=self.pk).update(
-            is_online=True,
-            last_seen=timezone.now()
-        )
+        self.is_online = True
+        self.last_seen = timezone.now()
+        self.save(update_fields=["is_online", "last_seen"])
 
     def mark_offline(self):
-        self.__class__.objects.filter(pk=self.pk).update(
-            is_online=False,
-            last_seen=timezone.now()
-        )
+        self.is_online = False
+        self.last_seen = timezone.now()
+        self.save(update_fields=["is_online", "last_seen"])
+
+    def mark_last_active(self):
+        self.last_active = timezone.now()
+        self.save(update_fields=["last_active"])
 
     @property
     def image_tag(self):
         if self.image and hasattr(self.image, "url"):
-            return format_html('<img src="{}" width="50" height="50" />', self.image.url)
+            return format_html(
+                '<img src="{}" width="50" height="50" style="border-radius:50%;" />',
+                self.image.url
+            )
         return "No Image"
 
     def save(self, *args, **kwargs):
         if self.email:
             self.email = self.__class__.objects.normalize_email(self.email)
+
         if self.phone:
             self.phone = self.__class__.objects.normalize_phone(self.phone)
+
         super().save(*args, **kwargs)
 
 
