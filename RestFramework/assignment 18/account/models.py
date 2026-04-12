@@ -206,10 +206,7 @@ class OTP(models.Model):
     @classmethod
     def create_otp(cls, user, ip=None):
         with transaction.atomic():
-            last = cls.objects.select_for_update().filter(
-                user=user,
-                is_used=False
-            ).order_by("-created_at").first()
+            last = cls.objects.filter(user=user, is_used=False).order_by("-created_at").first()
 
             if last and last.created_at + timedelta(seconds=cls.RESEND_INTERVAL) > timezone.now():
                 wait = (last.created_at + timedelta(seconds=cls.RESEND_INTERVAL)) - timezone.now()
@@ -218,7 +215,7 @@ class OTP(models.Model):
                     "message": f"Wait {int(wait.total_seconds())} seconds"
                 }
 
-            cls.objects.filter(user=user).update(is_used=True)
+            cls.objects.filter(user=user, is_used=False).update(is_used=True)
 
             otp = cls.generate_otp()
             salt = secrets.token_hex(16)
@@ -230,9 +227,9 @@ class OTP(models.Model):
                 ip_address=ip
             )
 
-            # Celery task
+            # IMPORTANT FIX
             from account.tasks import send_otp_email
-            send_otp_email.delay(user.email, otp)
+            send_otp_email.delay(obj.id, otp)
 
             return {
                 "success": True,
@@ -244,7 +241,7 @@ class OTP(models.Model):
     # =========================
     @classmethod
     def verify_otp(cls, otp_id, otp_code):
-        if not otp_code or not otp_code.isdigit() or len(otp_code) != cls.OTP_LENGTH:
+        if not otp_code or not otp_code.isdigit():
             return {"success": False, "message": "Invalid OTP"}
 
         with transaction.atomic():
@@ -253,14 +250,14 @@ class OTP(models.Model):
             except cls.DoesNotExist:
                 return {"success": False, "message": "OTP not found"}
 
+            if otp_obj.is_used:
+                return {"success": False, "message": "Already used"}
+
             if otp_obj.is_blocked():
                 return {"success": False, "message": "Blocked"}
 
             if otp_obj.is_expired():
                 return {"success": False, "message": "Expired"}
-
-            if otp_obj.is_used:
-                return {"success": False, "message": "Already used"}
 
             hashed = cls.hash_otp(otp_code, otp_obj.otp_salt)
 
@@ -273,10 +270,12 @@ class OTP(models.Model):
 
                 return {"success": True, "message": "Verified"}
 
+            # wrong OTP
             otp_obj.attempt_count += 1
 
             if otp_obj.attempt_count >= cls.MAX_TRIES:
                 otp_obj.blocked_until = timezone.now() + timedelta(seconds=cls.BLOCK_TIME)
+                otp_obj.attempt_count = 0  # reset after block
 
             otp_obj.save(update_fields=["attempt_count", "blocked_until"])
 

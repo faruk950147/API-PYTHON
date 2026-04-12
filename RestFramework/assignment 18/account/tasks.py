@@ -3,7 +3,6 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 
-
 @shared_task(
     bind=True,
     autoretry_for=(Exception,),
@@ -11,7 +10,9 @@ from django.conf import settings
     retry_kwargs={'max_retries': 3}
 )
 def send_otp_email(self, otp_id, otp_code):
+
     from account.models import OTP
+
     # =========================
     # GET OTP OBJECT
     # =========================
@@ -23,7 +24,7 @@ def send_otp_email(self, otp_id, otp_code):
     user = otp_obj.user
 
     # =========================
-    # SETTINGS
+    # EMAIL CONFIG
     # =========================
     expiry = settings.OTP_EXPIRY_MINUTES
 
@@ -34,28 +35,23 @@ def send_otp_email(self, otp_id, otp_code):
     )
 
     # =========================
-    # EMAIL CONTENT
+    # CLEAN MESSAGE (IMPORTANT FIX)
     # =========================
-    subject = "Your OTP Verification Code"
-
-    message = f"""
-        Hello {user.username},
-
-        Your OTP is: {otp_code}
-
-        This OTP will expire in {expiry} minutes.
-
-        If you did not request this, please ignore this email.
-        """
+    message = (
+        f"Hello {user.username},\n\n"
+        f"Your OTP is: {otp_code}\n\n"
+        f"This OTP will expire in {expiry} minutes.\n\n"
+        f"If you did not request this, please ignore this email."
+    )
 
     # =========================
     # SEND EMAIL
     # =========================
     send_mail(
-        subject,
-        message,
-        from_email,
-        [user.email],
+        subject="Your OTP Verification Code",
+        message=message,
+        from_email=from_email,
+        recipient_list=[user.email],
         fail_silently=False
     )
 
