@@ -1,0 +1,15 @@
+def mark_online(self):
+    self.__class__._update_presence(self, True)
+
+def mark_offline(self):
+    self.__class__._update_presence(self, False)
+
+def mark_last_active(self):
+    self.last_active = timezone.now()
+    self.save(update_fields=["last_active"])
+
+
+def _update_presence(self, status):
+    self.is_online = status
+    self.last_seen = timezone.now()
+    self.save(update_fields=["is_online", "last_seen"])
