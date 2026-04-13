@@ -106,7 +106,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = "01. Users"
         db_table = "user"
         ordering = ["-created_at"]
-
+        # indexes for faster lookups on common queries like 
+        # email, phone, active status, verification status, and online status
         indexes = [
             models.Index(fields=["email"]),
             models.Index(fields=["phone"]),
@@ -163,6 +164,8 @@ class OTP(models.Model):
         db_table = "otp"
         ordering = ["-created_at"]
 
+        # indexes for faster lookups on common queries like 
+        # user, used status, creation time, and IP address
         indexes = [
             models.Index(fields=["user", "is_used"]),
             models.Index(fields=["created_at"]),

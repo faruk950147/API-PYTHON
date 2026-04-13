@@ -1,19 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status,reverse
+from rest_framework.permissions import AllowAny
+
+from django.contrib.auth import get_user_model
 
 from account.serializers import (
     SignupSerializer, OTPVerifySerializer
 )
-
-class APIEndpoints(APIView):
-    permission_classes = [AllowAny]
-    def get(self, request):
-        return Response({
-            "signup": "api/account/signup/",
-            "otp-verify": "api/account/verify-otp/",
-        })
+User = get_user_model()
 
 # =========================
 # Signup API
