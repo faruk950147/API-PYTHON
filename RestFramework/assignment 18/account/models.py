@@ -177,7 +177,7 @@ class OTP(models.Model):
     # =========================
     @staticmethod
     def hash_otp(otp, salt):
-        secret = settings.OTP_SECRET_KEY
+        secret = getattr(settings, "OTP_SECRET_KEY")
         return hmac.new(
             secret.encode(),
             f"{otp}{salt}".encode(),
