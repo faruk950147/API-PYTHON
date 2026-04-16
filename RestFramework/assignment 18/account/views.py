@@ -1,5 +1,3 @@
-from urllib import request
-
 from django.views import View
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
