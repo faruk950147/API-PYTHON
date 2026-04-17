@@ -6,14 +6,9 @@ from account.models import OTP
 User = get_user_model()
 
 
-# ================= SIGNUP =================
-from rest_framework import serializers
-from django.contrib.auth import get_user_model
-from account.models import OTP
-
-User = get_user_model()
-
-# ================= SIGNUP =================
+# =========================
+# SIGNUP
+# =========================
 class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
@@ -24,7 +19,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password2"]:
-            raise serializers.ValidationError("Passwords do not match")
+            raise serializers.ValidationError("Password mismatch")
         return attrs
 
     def create(self, validated_data):
@@ -32,32 +27,28 @@ class SignupSerializer(serializers.ModelSerializer):
 
         user = User.objects.create_user(**validated_data)
 
-        result = OTP.create_otp(user)
+        OTP.create_otp(user=user)
 
-        if not result["success"]:
-            raise serializers.ValidationError(result["message"])
-
-        return {
-            "user": user,
-            "otp_id": result["otp_id"]
-        }
+        return user
 
 
-# ================= OTP VERIFY =================
+# =========================
+# OTP VERIFY
+# =========================
 class OTPVerifySerializer(serializers.Serializer):
     email = serializers.EmailField()
-    otp = serializers.CharField(max_length=6)
+    otp = serializers.CharField()
 
     def validate(self, attrs):
-        email = attrs.get("email")
-        otp_code = attrs.get("otp")
-
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email=attrs["email"])
         except User.DoesNotExist:
             raise serializers.ValidationError("User not found")
 
-        result = OTP.verify_otp(user, otp_code)
+        if user.is_verified:
+            raise serializers.ValidationError("Already verified")
+
+        result = OTP.verify_otp(user, attrs["otp"])
 
         if not result["success"]:
             raise serializers.ValidationError(result["message"])
@@ -66,7 +57,9 @@ class OTPVerifySerializer(serializers.Serializer):
         return attrs
 
 
-# ================= LOGIN =================
+# =========================
+# LOGIN (JWT)
+# =========================
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
@@ -80,35 +73,116 @@ class LoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError("Invalid credentials")
 
-        if not user.is_verified:
-            raise serializers.ValidationError("Account not verified")
+        if not user.is_active:
+            raise serializers.ValidationError("Inactive user")
 
-        # JWT TOKEN
+        if not user.is_verified:
+            raise serializers.ValidationError("Not verified")
+
         refresh = RefreshToken.for_user(user)
 
         return {
+            "user_id": user.id,
+            "username": user.username,
             "access": str(refresh.access_token),
-            "refresh": str(refresh),
+            "refresh": str(refresh)
         }
-        
 
-class ResendOTPSerializer(serializers.Serializer):
+
+# =========================
+# CHANGE PASSWORD
+# =========================
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField()
+    new_password = serializers.CharField()
+    confirm_password = serializers.CharField()
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+
+        if not user.check_password(attrs["old_password"]):
+            raise serializers.ValidationError("Wrong old password")
+
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError("Mismatch")
+
+        return attrs
+
+    def save(self):
+        user = self.context["request"].user
+        user.set_password(self.validated_data["new_password"])
+        user.save(update_fields=["password"])
+        return user
+
+
+# =========================
+# RESET PASSWORD REQUEST
+# =========================
+class ResetPasswordRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate(self, attrs):
-        email = attrs.get("email")
-
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email=attrs["email"])
         except User.DoesNotExist:
             raise serializers.ValidationError("User not found")
 
-        result = OTP.create_otp(user)
+        OTP.create_otp(user=user)
+
+        attrs["user"] = user
+        return attrs
+
+
+# =========================
+# RESET PASSWORD CONFIRM (OTP REQUIRED)
+# =========================
+class ResetPasswordConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField()
+    new_password = serializers.CharField()
+    confirm_password = serializers.CharField()
+
+    def validate(self, attrs):
+        try:
+            user = User.objects.get(email=attrs["email"])
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found")
+
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError("Mismatch")
+
+        result = OTP.verify_otp(user, attrs["otp"])
 
         if not result["success"]:
             raise serializers.ValidationError(result["message"])
 
         attrs["user"] = user
-        attrs["otp_id"] = result["otp_id"]
-
         return attrs
+
+    def save(self):
+        user = self.validated_data["user"]
+        user.set_password(self.validated_data["new_password"])
+        user.save(update_fields=["password"])
+        return user
+
+
+# =========================
+# RESEND OTP
+# =========================
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate(self, attrs):
+        try:
+            user = User.objects.get(email=attrs["email"])
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found")
+
+        OTP.create_otp(user=user)
+
+        attrs["user"] = user
+        return attrs
+    
+    
+    
+    

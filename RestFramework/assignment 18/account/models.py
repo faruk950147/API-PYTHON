@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from django.conf import settings
+from django.db.models import Q, F
 
 import hashlib
 import hmac
@@ -34,7 +35,6 @@ class UserManager(BaseUserManager):
             return "+" + phone
         if phone.startswith("01"):
             return "+880" + phone[1:]
-
         return phone
 
     def create_user(self, username, email, phone, password=None, **extra_fields):
@@ -76,6 +76,7 @@ class UserManager(BaseUserManager):
 # USER MODEL
 # =========================
 class User(AbstractBaseUser, PermissionsMixin):
+
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15, unique=True, validators=[phone_validator])
@@ -105,16 +106,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["email", "phone"]
 
     class Meta:
-        verbose_name_plural = "01. Users"
+        verbose_name_plural = "01 -> User"
         db_table = "user"
         ordering = ["-created_at"]
-
         indexes = [
             models.Index(fields=["email"]),
             models.Index(fields=["phone"]),
-            models.Index(fields=["is_active"]),
-            models.Index(fields=["is_verified"]),
-            models.Index(fields=["is_online"]),
+            models.Index(fields=["username"]),
         ]
 
     def save(self, *args, **kwargs):
@@ -122,6 +120,9 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.email = self.email.lower()
         super().save(*args, **kwargs)
 
+    # =========================
+    # STATUS METHODS
+    # =========================
     def mark_online(self):
         self.is_online = True
         self.last_seen = timezone.now()
@@ -141,67 +142,100 @@ class User(AbstractBaseUser, PermissionsMixin):
 # OTP MODEL
 # =========================
 class OTP(models.Model):
+
     OTP_LENGTH = getattr(settings, "OTP_LENGTH", 6)
     OTP_EXPIRY_MINUTES = getattr(settings, "OTP_EXPIRY_MINUTES", 5)
     RESEND_INTERVAL = getattr(settings, "OTP_RESEND_INTERVAL", 60)
     MAX_TRIES = getattr(settings, "OTP_MAX_TRIES", 5)
     BLOCK_TIME = getattr(settings, "OTP_BLOCK_TIME", 300)
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="otps")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="otps"
+    )
 
     otp_hash = models.CharField(max_length=64)
     otp_salt = models.CharField(max_length=32)
 
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-
-    is_used = models.BooleanField(default=False)
     attempt_count = models.PositiveIntegerField(default=0)
-
     blocked_until = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name_plural = "02. OTPs"
+        verbose_name_plural = "02 -> OTP"
         db_table = "otp"
         ordering = ["-created_at"]
-
         indexes = [
-            models.Index(fields=["user", "is_used"]),
-            models.Index(fields=["created_at", "is_used"]),
-            models.Index(fields=["ip_address"]),
+            models.Index(fields=["user", "created_at"]),
         ]
-        
-    # OTP CORE SECURITY
+
+    # =========================
+    # PROPERTIES
+    # =========================
+    @property
+    def is_expired(self):
+        return timezone.now() > (
+            self.created_at + timedelta(minutes=self.OTP_EXPIRY_MINUTES)
+        )
+
+    @property
+    def is_blocked(self):
+        return (
+            self.blocked_until is not None
+            and timezone.now() < self.blocked_until
+        )
+
+    # =========================
+    # HASH OTP
+    # =========================
     @staticmethod
     def hash_otp(otp, salt):
-        secret = settings.OTP_SECRET_KEY.encode()
-        return hmac.new(secret, f"{otp}{salt}".encode(), hashlib.sha256).hexdigest()
+        return hmac.new(
+            settings.OTP_SECRET_KEY.encode(),
+            f"{otp}{salt}".encode(),
+            hashlib.sha256
+        ).hexdigest()
 
-    # OTP GENERATOR
+    # =========================
+    # GENERATE OTP
+    # =========================
     @classmethod
     def generate_otp(cls):
-        return ''.join(secrets.choice("0123456789") for _ in range(cls.OTP_LENGTH))
+        return ''.join(
+            secrets.choice("0123456789")
+            for _ in range(cls.OTP_LENGTH)
+        )
 
-    # OTP BLOCK CHECK
-    def is_blocked(self):
-        return self.blocked_until and timezone.now() < self.blocked_until
-
-    # CREATE OTP (RATE LIMITED)
+    # =========================
+    # CREATE OTP
+    # =========================
     @classmethod
-    def create_otp(cls, user, ip=None):
-        with transaction.atomic():
-            last = cls.objects.filter(user=user, is_used=False).order_by("-created_at").first()
+    def create_otp(cls, user):
 
-            if last:
-                elapsed = timezone.now() - last.created_at
-                if elapsed < timedelta(seconds=cls.RESEND_INTERVAL):
-                    wait = timedelta(seconds=cls.RESEND_INTERVAL) - elapsed
+        with transaction.atomic():
+
+            now = timezone.now()
+
+            last_otp = (
+                cls.objects
+                .filter(user=user)
+                .order_by("-created_at")
+                .only("created_at")
+                .first()
+            )
+
+            if last_otp:
+                elapsed = (now - last_otp.created_at).total_seconds()
+
+                if elapsed < cls.RESEND_INTERVAL:
                     return {
                         "success": False,
-                        "message": f"Wait {int(wait.total_seconds())} sec"
+                        "message": f"Wait {int(cls.RESEND_INTERVAL - elapsed)} sec"
                     }
 
-            cls.objects.filter(user=user, is_used=False).update(is_used=True)
+            cls.objects.filter(user=user).delete()
 
             otp = cls.generate_otp()
             salt = secrets.token_hex(16)
@@ -209,8 +243,7 @@ class OTP(models.Model):
             obj = cls.objects.create(
                 user=user,
                 otp_hash=cls.hash_otp(otp, salt),
-                otp_salt=salt,
-                ip_address=ip,
+                otp_salt=salt
             )
 
             from account.tasks import send_otp_email
@@ -218,58 +251,71 @@ class OTP(models.Model):
 
             return {"success": True, "otp_id": obj.id}
 
-    # VERIFY OTP (FULL SAFE FLOW)
+    # =========================
+    # VERIFY OTP
+    # =========================
     @classmethod
     def verify_otp(cls, user, otp_code):
-        otp_obj = cls.objects.select_related("user").filter(
-            user=user,
-            is_used=False
-        ).order_by("-created_at").first()
 
-        if not otp_obj:
+        with transaction.atomic():
+
+            now = timezone.now()
+
+            otp_obj = (
+                cls.objects
+                .select_for_update()
+                .filter(user=user)
+                .order_by("-created_at")
+                .first()
+            )
+
+            if not otp_obj:
+                return {"success": False, "message": "Invalid OTP"}
+
+            if otp_obj.is_blocked:
+                remain = int((otp_obj.blocked_until - now).total_seconds())
+                return {"success": False, "message": f"Blocked {remain}s"}
+
+            if otp_obj.is_expired:
+                otp_obj.delete()
+                return {"success": False, "message": "Expired OTP"}
+
+            hashed = cls.hash_otp(otp_code, otp_obj.otp_salt)
+
+            if hmac.compare_digest(hashed, otp_obj.otp_hash):
+
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+
+                User.objects.filter(id=user.id).update(is_verified=True)
+                otp_obj.delete()
+
+                return {"success": True, "message": "Verified"}
+
+            # increase attempt count atomically
+            cls.objects.filter(id=otp_obj.id).update(
+                attempt_count=F("attempt_count") + 1
+            )
+
+            otp_obj.refresh_from_db()
+
+            if otp_obj.attempt_count >= cls.MAX_TRIES:
+                cls.objects.filter(id=otp_obj.id).update(
+                    blocked_until=now + timedelta(seconds=cls.BLOCK_TIME)
+                )
+
             return {"success": False, "message": "Invalid OTP"}
 
-        # BLOCK CHECK
-        if otp_obj.is_blocked():
-            remaining = (otp_obj.blocked_until - timezone.now()).total_seconds()
-            return {"success": False, "message": f"Blocked. Try after {int(remaining)} sec"}
-
-        # EXPIRE CHECK
-        if timezone.now() > otp_obj.created_at + timedelta(minutes=cls.OTP_EXPIRY_MINUTES):
-            return {"success": False, "message": "Expired"}
-
-        # VERIFY
-        hashed = cls.hash_otp(otp_code, otp_obj.otp_salt)
-
-        if hmac.compare_digest(hashed, otp_obj.otp_hash):
-            otp_obj.is_used = True
-            otp_obj.save(update_fields=["is_used"])
-
-            otp_obj.user.is_verified = True
-            otp_obj.user.save(update_fields=["is_verified"])
-
-            return {"success": True}
-
-        # WRONG OTP HANDLING
-        otp_obj.attempt_count += 1
-
-        if otp_obj.attempt_count >= cls.MAX_TRIES:
-            otp_obj.blocked_until = timezone.now() + timedelta(seconds=cls.BLOCK_TIME)
-            otp_obj.attempt_count = 0
-
-        otp_obj.save(update_fields=["attempt_count", "blocked_until"])
-
-        return {"success": False, "message": "Wrong OTP"}
-
-    # CLEANUP SYSTEM
+    # =========================
+    # CLEANUP TASK
+    # =========================
     @classmethod
     def cleanup_otps(cls):
-        expiry_time = timezone.now() - timedelta(minutes=cls.OTP_EXPIRY_MINUTES)
+        now = timezone.now()
 
-        return cls.objects.filter(
-            created_at__lt=expiry_time,
-            is_used=False
+        deleted, _ = cls.objects.filter(
+            Q(created_at__lt=now - timedelta(minutes=cls.OTP_EXPIRY_MINUTES)) |
+            (Q(blocked_until__isnull=False) & Q(blocked_until__lt=now))
         ).delete()
-        
-        
-        
+
+        return deleted
