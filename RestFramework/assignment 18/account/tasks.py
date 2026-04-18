@@ -12,12 +12,11 @@ User = get_user_model()
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
 def send_otp_email(self, otp_id, otp_code):
-
-    otp_obj = OTP.objects.select_related("user").filter(id=otp_id).first()
-
-    if not otp_obj:
+    try:
+        otp_obj = OTP.objects.select_related("user").get(id=otp_id)
+    except OTP.DoesNotExist:
         return "OTP not found"
-
+        
     # use model property
     if otp_obj.is_expired:
         otp_obj.delete()
@@ -42,41 +41,6 @@ def send_otp_email(self, otp_id, otp_code):
 
     return "OTP sent successfully"
 
-
-
-
-
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
-def send_password_reset_email(self, user_id, token):
-
-    user = User.objects.filter(id=user_id).first()
-
-    if not user:
-        return "User not found"
-
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
-
-    domain = settings.BASE_URL  # FIXED
-
-    reset_link = f"http://{domain}/reset-password/{uid}/{token}/"
-
-    message = (
-        f"Hello {user.username},\n\n"
-        f"You requested a password reset.\n\n"
-        f"Click the link below:\n\n"
-        f"{reset_link}\n\n"
-        f"If this was not you, ignore this email."
-    )
-
-    send_mail(
-        subject="Password Reset Request",
-        message=message,
-        from_email=settings.EMAIL_HOST_USER,
-        recipient_list=[user.email],
-        fail_silently=False
-    )
-
-    return "Password reset email sent successfully"
 
 @shared_task
 def cleanup_otps_task():
