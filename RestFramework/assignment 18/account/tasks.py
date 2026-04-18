@@ -37,7 +37,10 @@ def send_otp_email(self, otp_id, otp_code):
     {verify_url}
 
     Body:
-    {{ "otp": "{otp_code}" }}
+    {{  
+        "email": "{user.email}"
+        "otp": "{otp_code}"
+    }}
 
     If you did not request this, ignore this email.
     """
