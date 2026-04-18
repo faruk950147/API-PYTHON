@@ -10,26 +10,37 @@ from django.contrib.auth import get_user_model
 from account.models import OTP
 User = get_user_model()
 
+
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
 def send_otp_email(self, otp_id, otp_code):
+    verify_url = f"{settings.BASE_URL}/api/account/verify-otp/"
+
     try:
         otp_obj = OTP.objects.select_related("user").get(id=otp_id)
     except OTP.DoesNotExist:
         return "OTP not found"
-        
-    # use model property
+
     if otp_obj.is_expired:
         otp_obj.delete()
         return "OTP expired"
 
     user = otp_obj.user
 
-    message = (
-        f"Hello {user.username},\n\n"
-        f"Your OTP is: {otp_code}\n\n"
-        f"This OTP will expire in {settings.OTP_EXPIRY_MINUTES} minutes.\n\n"
-        f"If you did not request this, ignore this email."
-    )
+    message = f"""
+    Hello {user.username},
+
+    Your OTP is: {otp_code}
+
+    This OTP will expire in {settings.OTP_EXPIRY_MINUTES} minutes.
+
+    Send POST request to:
+    {verify_url}
+
+    Body:
+    {{ "otp": "{otp_code}" }}
+
+    If you did not request this, ignore this email.
+    """
 
     send_mail(
         subject="Your OTP Verification Code",
@@ -40,9 +51,3 @@ def send_otp_email(self, otp_id, otp_code):
     )
 
     return "OTP sent successfully"
-
-
-@shared_task
-def cleanup_otps_task():
-    deleted_count = OTP.cleanup_otps()
-    return f"Deleted OTPs: {deleted_count}"
