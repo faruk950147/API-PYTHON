@@ -110,7 +110,6 @@ class OTPAdmin(admin.ModelAdmin):
         "user",
         "otp_status",
         "attempt_count",
-        "ip_address",
         "blocked_until",
         "created_at",
     )
@@ -124,7 +123,6 @@ class OTPAdmin(admin.ModelAdmin):
         "user__username",
         "user__email",
         "user__phone",
-        "ip_address",
     )
 
     readonly_fields = (
@@ -140,7 +138,6 @@ class OTPAdmin(admin.ModelAdmin):
         ("User Info", {
             "fields": (
                 "user",
-                "ip_address",
             )
         }),
         ("OTP Security Data", {

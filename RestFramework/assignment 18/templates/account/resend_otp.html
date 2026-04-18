@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Resend OTP{% endblock title %}
+
+{% block content %}
+    <!-- Breadcrumb Start -->
+    <div class="breadcrumb-wrap">
+        <div class="container-fluid">
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item"><a href="#">Products</a></li>
+                <li class="breadcrumb-item active">Resend OTP</li>
+            </ul>
+        </div>
+    </div>
+    <!-- Breadcrumb End -->
+    
+    <!-- OTP Resend Start -->
+    <div class="otp-resend">
+        <div class="container-fluid">
+            <div class="row justify-content-center align-items-center">
+                <div class="col-lg-6">
+                    <div class="otp-resend-form">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <label>Email</label>
+                                <input class="form-control" type="email" placeholder="Email">
+                            </div>
+                            <div class="col-md-12">
+                                <button class="btn form-control">Resend OTP</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- OTP Resend End -->
+        
+{% endblock content %}

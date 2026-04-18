@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Signup{% endblock title %}
+
+{% block content %}
+    <!-- Breadcrumb Start -->
+    <div class="breadcrumb-wrap">
+        <div class="container-fluid">
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item"><a href="#">Products</a></li>
+                <li class="breadcrumb-item active">Signup</li>
+            </ul>
+        </div>
+    </div>
+    <!-- Breadcrumb End -->
+    
+    <!-- Signup Start -->
+    <div class="signup">
+        <div class="container-fluid">
+            <div class="row justify-content-center align-items-center">
+                <div class="col-lg-6">
+                    <div class="signup-form">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label>Username</label>
+                                    {{form.username}}
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Email</label>
+                                    {{form.email}}
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Phone</label>
+                                    {{form.phone}}
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Password</label>
+                                    {{form.password}}
+                                </div>
+                                <div class="col-md-12">
+                                    <label>Confirm Password</label>
+                                    {{form.password2}}
+                                </div>
+                                <div class="col-md-12">
+                                    <button class="btn form-control">Sign Up</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Signup End -->
+        
+{% endblock content %}

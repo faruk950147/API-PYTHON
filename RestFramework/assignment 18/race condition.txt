@@ -1,0 +1,16 @@
+from django.db import transaction
+from shop.models import Product
+from django.http import Http404
+
+def buy_product(product_id, quantity):
+    try:
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(id=product_id)
+            if product.stock >= quantity:
+                product.stock -= quantity
+                product.save()
+                return True
+            else:
+                return False
+    except Product.DoesNotExist:
+        raise Http404("Product not found")

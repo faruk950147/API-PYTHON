@@ -56,7 +56,7 @@ def send_password_reset_email(self, user_id, token):
 
     uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-    domain = settings.SITE_DOMAIN  # FIXED
+    domain = settings.BASE_URL  # FIXED
 
     reset_link = f"http://{domain}/reset-password/{uid}/{token}/"
 
