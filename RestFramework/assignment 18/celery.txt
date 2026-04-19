@@ -1,3 +1,32 @@
+হ্যাঁ, এই config ঠিক আছে ✅
+
+Broker: Redis
+Worker tasks: Celery
+Scheduler: Celery Beat
+
+Task path-ও match করছে:
+
+"task": "account.tasks.cleanup_otps"
+
+এবং আপনার task:
+
+@shared_task
+def cleanup_otps():
+    return OTP.cleanup_otps()
+
+সব ঠিক।
+
+প্রতি 5 মিনিটে কী হবে?
+Celery Beat
+→ account.tasks.cleanup_otps
+→ OTP.cleanup_otps()
+→ expired OTP delete
+Run করতে ভুলবেন না:
+celery -A core worker --loglevel=info
+celery -A core beat --loglevel=info
+
+তাহলেই automatic cleanup চলবে।
+
 ✅ 1. Direct VS Code (limited)
 
 VS Code দিয়ে open করলে শুধু unreadable data দেখাবে:
