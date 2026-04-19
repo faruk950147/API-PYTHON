@@ -54,3 +54,8 @@ def send_otp_email(self, otp_id, otp_code):
     )
 
     return "OTP sent successfully"
+
+# Auto delete otp
+@shared_task
+def cleanup_otps():
+    return OTP.cleanup_otps()

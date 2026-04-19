@@ -203,7 +203,7 @@ from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
     "cleanup_otps": {
-        "task": "account.tasks.cleanup_otps_task",
+        "task": "account.tasks.cleanup_otps",
         "schedule": crontab(minute="*/5"),
     }
 }
