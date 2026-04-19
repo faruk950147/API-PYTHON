@@ -13,7 +13,8 @@ class SignupForm(forms.ModelForm):
     password2 = forms.CharField(widget=forms.PasswordInput)
     
     class Meta:
-        
+        model = User
+        fields = ["username", "email", "phone", "password", "password2"]
 
     def clean(self):
         cleaned_data = super().clean()

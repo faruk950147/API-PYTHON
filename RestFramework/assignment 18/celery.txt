@@ -1,4 +1,4 @@
-হ্যাঁ, এই config ঠিক আছে ✅
+হ্যাঁ, এই config ঠিক আছে 
 
 Broker: Redis
 Worker tasks: Celery
@@ -27,26 +27,26 @@ celery -A core beat --loglevel=info
 
 তাহলেই automatic cleanup চলবে।
 
-✅ 1. Direct VS Code (limited)
+1. Direct VS Code (limited)
 
 VS Code দিয়ে open করলে শুধু unreadable data দেখাবে:
 
 এটা useful না
-✅ 2. Best way (recommended)
+2. Best way (recommended)
 Terminal দিয়ে inspect:
 celery -A config inspect scheduled
 
 বা
 
 celery -A config inspect active
-✅ 3. Logs দেখো (best method)
+3. Logs দেখো (best method)
 celery -A config beat --loglevel=info
 
 এখানে তুমি দেখতে পাবে:
 
 কোন task কখন run হবে
 কোন task trigger হচ্ছে
-✅ 4. Redis-based monitoring (advanced)
+4. Redis-based monitoring (advanced)
 
 যদি Redis ব্যবহার করো, তাহলে:
 
@@ -60,10 +60,10 @@ Open:
 http://localhost:5555
 Summary
 Method	Result
-VS Code open .dat	❌ useless
-Celery inspect	✅ useful
-Beat logs	✅ best for debug
-Flower dashboard	⭐ best UI
+VS Code open .dat useless
+Celery inspect useful
+Beat logs best for debug
+Flower dashboard best UI
 
-👉 সহজ কথা:
+সহজ কথা:
 .dat file manually read করার দরকার নেই, Celery নিজেই manage করে।
