@@ -39,7 +39,7 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
-            return Response({"success": True, **serializer.validated_data},bstatus=status.HTTP_200_OK)
+            return Response({"success": True, **serializer.validated_data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # LOGOUT
@@ -64,7 +64,7 @@ class ChangePasswordView(APIView):
         serializer = ChangePasswordSerializer( data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save()
-            return Response({"success": True, "message": "Password changed"}, status=status.HTTP_200_OK)
+            return Response({"success": True, "message": "Password changed successfully. Please login again."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # RESET PASSWORD REQUEST
