@@ -34,7 +34,7 @@ def send_otp_email(self, otp_id, otp_code):
 
     This OTP will expire in {settings.OTP_EXPIRY_MINUTES} minutes.
 
-    Send POST request to:
+    Send POST request to signup verify your account:
     {account_verify_url}
 
     Body:
@@ -44,6 +44,15 @@ def send_otp_email(self, otp_id, otp_code):
     }}
 
     If you did not request this, ignore this email.
+    Send POST request to password reset:
+    {password_reset_verify_url}
+
+    Body:
+    {{  
+        "email": "{user.email}"
+        "otp": "{otp_code}"
+    }}
+    
     """
 
     send_mail(
