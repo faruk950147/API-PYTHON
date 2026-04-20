@@ -71,7 +71,7 @@ def resend_otp_email(self, otp_id):
 
     message = (
         f"Hello {user.username},\n\n"
-        f"Your OTP Code: {otp_obj.otp_hash}\n\n"
+        f"Your OTP Code: {otp_obj}\n\n"
         f"Please use it within {settings.OTP_EXPIRY_MINUTES} minutes.\n\n"
         "If you did not request this, ignore this email.\n\n"
         "Thanks,\nSystem Team"
