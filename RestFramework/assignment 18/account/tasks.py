@@ -13,7 +13,8 @@ User = get_user_model()
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={'max_retries': 3})
 def send_otp_email(self, otp_id, otp_code):
-    verify_url = f"{settings.BASE_URL}/api/account/verify-otp/"
+    account_verify_url = f"{settings.BASE_URL}/api/account/verify-account-otp/"
+    password_reset_verify_url = f"{settings.BASE_URL}/api/account/verify-reset-otp/"
 
     try:
         otp_obj = OTP.objects.select_related("user").get(id=otp_id)
@@ -34,7 +35,7 @@ def send_otp_email(self, otp_id, otp_code):
     This OTP will expire in {settings.OTP_EXPIRY_MINUTES} minutes.
 
     Send POST request to:
-    {verify_url}
+    {account_verify_url}
 
     Body:
     {{  
