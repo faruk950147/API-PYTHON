@@ -104,18 +104,11 @@ class UserAdmin(admin.ModelAdmin):
 # =========================
 @admin.register(OTP)
 class OTPAdmin(admin.ModelAdmin):
-
-    list_display = (
-        "id",
-        "user",
-        "otp_status",
-        "attempt_count",
-        "blocked_until",
-        "created_at",
-    )
+    list_display = ("id", "user", "otp_status", "attempt_count", "blocked_until", "is_used", "created_at",)
 
     list_filter = (
         "blocked_until",
+        "is_used",
         "created_at",
     )
 
@@ -131,6 +124,7 @@ class OTPAdmin(admin.ModelAdmin):
         "otp_salt",
         "attempt_count",
         "blocked_until",
+        "is_used",
         "created_at",
     )
 
@@ -150,6 +144,7 @@ class OTPAdmin(admin.ModelAdmin):
             "fields": (
                 "attempt_count",
                 "blocked_until",
+                "is_used",
             )
         }),
         ("Timestamp", {
