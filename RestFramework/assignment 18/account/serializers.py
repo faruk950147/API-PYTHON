@@ -1,12 +1,13 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from account.models import OTP
+from account.tasks import send_otp_email
 
 User = get_user_model()
 
 
-# SIGNUP
 class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
@@ -25,12 +26,19 @@ class SignupSerializer(serializers.ModelSerializer):
 
         user = User.objects.create_user(**validated_data)
 
-        OTP.create_otp(user=user)
+        result, otp_code = OTP.create_otp(user=user)
+
+        if not result["success"]:
+            raise serializers.ValidationError(result.get("message"))
+
+        otp_obj = OTP.objects.filter(user=user, is_used=False).order_by("-created_at").first()
+
+        if otp_obj and otp_code:
+            send_otp_email.delay(otp_obj.id, otp_code)
 
         return user
 
 
-# OTP VERIFY
 class OTPVerifySerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField()
@@ -49,20 +57,16 @@ class OTPVerifySerializer(serializers.Serializer):
         if not result["success"]:
             raise serializers.ValidationError(result["message"])
 
-        attrs["user"] = user
+        self.user = user
         return attrs
 
 
-# LOGIN (JWT)
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
 
     def validate(self, attrs):
-        user = authenticate(
-            username=attrs["username"],
-            password=attrs["password"]
-        )
+        user = authenticate(username=attrs["username"], password=attrs["password"])
 
         if not user:
             raise serializers.ValidationError("Invalid credentials")
@@ -73,17 +77,20 @@ class LoginSerializer(serializers.Serializer):
         if not user.is_verified:
             raise serializers.ValidationError("Not verified")
 
-        refresh = RefreshToken.for_user(user)
+        self.user = user
+        return attrs
+
+    def get_tokens(self):
+        refresh = RefreshToken.for_user(self.user)
 
         return {
-            "user_id": user.id,
-            "username": user.username,
+            "user_id": self.user.id,
+            "username": self.user.username,
             "access": str(refresh.access_token),
             "refresh": str(refresh)
         }
 
 
-# CHANGE PASSWORD
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField()
     new_password = serializers.CharField()
@@ -96,18 +103,17 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("Wrong old password")
 
         if attrs["new_password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError("Mismatch")
+            raise serializers.ValidationError("Mismatch password")
 
+        self.user = user
         return attrs
 
     def save(self):
-        user = self.context["request"].user
-        user.set_password(self.validated_data["new_password"])
-        user.save(update_fields=["password"])
-        return user
+        self.user.set_password(self.validated_data["new_password"])
+        self.user.save(update_fields=["password"])
+        return self.user
 
 
-# RESET PASSWORD REQUEST
 class ResetPasswordRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -117,13 +123,20 @@ class ResetPasswordRequestSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("User not found")
 
-        OTP.create_otp(user=user)
+        result, otp_code = OTP.create_otp(user=user)
 
-        attrs["user"] = user
+        if not result["success"]:
+            raise serializers.ValidationError(result.get("message"))
+
+        otp_obj = OTP.objects.filter(user=user, is_used=False).order_by("-created_at").first()
+
+        if otp_obj and otp_code:
+            send_otp_email.delay(otp_obj.id, otp_code)
+
+        self.user = user
         return attrs
 
 
-# RESET PASSWORD OTP VERIFY
 class ResetPasswordOTPVerifySerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField()
@@ -139,18 +152,16 @@ class ResetPasswordOTPVerifySerializer(serializers.Serializer):
         if not result["success"]:
             raise serializers.ValidationError(result["message"])
 
-        attrs["user"] = user
+        self.user = user
         return attrs
 
 
-# SET NEW PASSWORD
 class SetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
     confirm_password = serializers.CharField()
 
     def validate(self, attrs):
-
         if attrs["password"] != attrs["confirm_password"]:
             raise serializers.ValidationError("Passwords do not match")
 
@@ -159,22 +170,15 @@ class SetPasswordSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("User not found")
 
-        attrs["user"] = user
+        self.user = user
         return attrs
 
     def save(self):
-        user = self.validated_data["user"]
-
-        user.set_password(
-            self.validated_data["password"]
-        )
-
-        user.save()
-
-        return user
+        self.user.set_password(self.validated_data["password"])
+        self.user.save()
+        return self.user
 
 
-# RESEND OTP
 class ResendOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -184,11 +188,15 @@ class ResendOTPSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("User not found")
 
-        OTP.create_otp(user=user)
+        result, otp_code = OTP.create_otp(user=user)
 
-        attrs["user"] = user
+        if not result["success"]:
+            raise serializers.ValidationError(result.get("message"))
+
+        otp_obj = OTP.objects.filter(user=user, is_used=False).order_by("-created_at").first()
+
+        if otp_obj and otp_code:
+            send_otp_email.delay(otp_obj.id, otp_code)
+
+        self.user = user
         return attrs
-    
-    
-    
-    
