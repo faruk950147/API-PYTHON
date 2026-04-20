@@ -1,27 +1,17 @@
 from django.urls import path
-from account.api_views import (
-    SignupView,
-    OTPVerifyView,
-    LoginView,
-    LogoutView,
-    ChangePasswordView,
-    ResetPasswordRequestView,
-    ResetPasswordOTPVerifyView,
-    SetPasswordView,
-    ResendOTPView
-)
+from account.api_views import*
 
 urlpatterns = [
     path("signup/", SignupView.as_view(), name="signup"),
-    path("verify-account-otp/", OTPVerifyView.as_view(), name="verify-account-otp"),
+    path("otp/verify/signup/", OTPVerifyView.as_view(), name="verify-account-otp"),
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
 
-    path("change-password/", ChangePasswordView.as_view(), name="change-password"),
+    path("password/change/", ChangePasswordView.as_view(), name="change-password"),
 
-    path("reset-password/", ResetPasswordRequestView.as_view(), name="reset-password"),
-    path("verify-reset-otp/", ResetPasswordOTPVerifyView.as_view(), name="verify-reset-otp"),
-    path("set-password/", SetPasswordView.as_view(), name="set-password"),
+    path("password/reset/request/", ResetPasswordRequestView.as_view(), name="reset-password"),
+    path("otp/verify/reset/", ResetPasswordOTPVerifyView.as_view(), name="verify-reset-otp"),
+    path("password/reset/set/", SetPasswordView.as_view(), name="set-password"),
 
-    path("resend-otp/", ResendOTPView.as_view(), name="resend-otp"),
+    path("otp/resend/", ResendOTPView.as_view(), name="resend-otp"),
 ]

@@ -19,7 +19,6 @@ phone_validator = RegexValidator(
 
 
 class UserManager(BaseUserManager):
-
     def normalize_phone(self, phone):
         phone = re.sub(r"\s+", "", phone)
 
@@ -67,7 +66,6 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15, unique=True, validators=[phone_validator])
@@ -122,7 +120,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class OTP(models.Model):
-
     OTP_LENGTH = getattr(settings, "OTP_LENGTH", 6)
     OTP_EXPIRY_MINUTES = getattr(settings, "OTP_EXPIRY_MINUTES", 5)
     RESEND_INTERVAL = getattr(settings, "OTP_RESEND_INTERVAL", 60)
@@ -134,7 +131,7 @@ class OTP(models.Model):
         on_delete=models.CASCADE,
         related_name="otps"
     )
-
+    otp_type = models.CharField(max_length=20, choices=[("signup", "signup"),("reset", "reset"),])
     otp_hash = models.CharField(max_length=64)
     otp_salt = models.CharField(max_length=32)
 
@@ -171,13 +168,9 @@ class OTP(models.Model):
         return ''.join(secrets.choice("0123456789") for _ in range(cls.OTP_LENGTH))
 
     @classmethod
-    def create_otp(cls, user):
+    def create_otp(cls, user, otp_type):
         with transaction.atomic():
-
-            last = cls.objects.filter(
-                user=user,
-                is_used=False
-            ).order_by("-created_at").first()
+            last = cls.objects.filter(user=user, otp_type=otp_type, is_used=False).order_by("-created_at").first()
 
             if last:
                 elapsed = (timezone.now() - last.created_at).total_seconds()
@@ -185,63 +178,52 @@ class OTP(models.Model):
                 if elapsed < cls.RESEND_INTERVAL:
                     return {
                         "success": False,
-                        "retry_after": int(cls.RESEND_INTERVAL - elapsed),
-                        "message": "Please wait before requesting new OTP"
+                        "retry_after": int(cls.RESEND_INTERVAL - elapsed)
                     }, None
 
             otp = cls.generate_otp()
             salt = secrets.token_hex(16)
 
-            obj = cls.objects.create(
-                user=user,
-                otp_hash=cls.hash_otp(otp, salt),
-                otp_salt=salt
-            )
+            obj = cls.objects.create(user=user, otp_type=otp_type, otp_hash=cls.hash_otp(otp, salt), otp_salt=salt)
 
             return {"success": True}, otp
 
     @classmethod
-    def verify_otp(cls, user, otp_code):
-
+    def verify_otp(cls, user, otp_code, otp_type):
         with transaction.atomic():
-
-            otp_obj = cls.objects.select_for_update().filter(
-                user=user,
-                is_used=False
-            ).order_by("-created_at").first()
+            otp_obj = cls.objects.select_for_update().filter(user=user, otp_type=otp_type, is_used=False).order_by("-created_at").first()
 
             if not otp_obj:
                 return {"success": False, "message": "Invalid OTP"}
 
-            if otp_obj.is_blocked:
-                remain = int((otp_obj.blocked_until - timezone.now()).total_seconds())
-                return {"success": False, "message": f"Blocked {remain}s"}
+            if otp_obj.blocked_until and timezone.now() < otp_obj.blocked_until:
+                return {"success": False, "message": "Blocked"}
 
-            if otp_obj.is_expired:
+            if timezone.now() > otp_obj.created_at + timedelta(minutes=cls.OTP_EXPIRY_MINUTES):
                 otp_obj.is_used = True
-                otp_obj.save(update_fields=["is_used"])
+                otp_obj.save()
                 return {"success": False, "message": "Expired OTP"}
 
             hashed = cls.hash_otp(otp_code, otp_obj.otp_salt)
 
             if hmac.compare_digest(hashed, otp_obj.otp_hash):
-
-                User.objects.filter(id=user.id).update(is_verified=True)
+                if otp_type == "signup":
+                    User.objects.filter(id=user.id).update(is_verified=True)
 
                 otp_obj.is_used = True
-                otp_obj.save(update_fields=["is_used"])
+                otp_obj.save()
 
                 return {"success": True, "message": "Verified"}
 
             otp_obj.attempt_count += 1
-            otp_obj.save(update_fields=["attempt_count"])
+            otp_obj.save()
 
             if otp_obj.attempt_count >= cls.MAX_TRIES:
                 otp_obj.blocked_until = timezone.now() + timedelta(seconds=cls.BLOCK_TIME)
-                otp_obj.save(update_fields=["blocked_until"])
+                otp_obj.save()
 
             return {"success": False, "message": "Invalid OTP"}
-
+    
     @classmethod
     def cleanup_otps(cls):
         now = timezone.now()

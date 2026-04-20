@@ -120,6 +120,7 @@ class OTPAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "user",
+        "otp_type",
         "otp_hash",
         "otp_salt",
         "attempt_count",
