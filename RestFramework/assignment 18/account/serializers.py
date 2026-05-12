@@ -90,7 +90,10 @@ class LoginSerializer(serializers.Serializer):
 
         if not user.is_verified:
             raise serializers.ValidationError("Not verified")
-
+        
+        # Update last seen time
+        user.refresh_last_seen()
+        
         self.user = user
         return attrs
 
