@@ -18,9 +18,7 @@ class UserAdmin(admin.ModelAdmin):
         "is_active",
         "is_staff",
         "is_superuser",
-        "is_online",
         "last_seen",
-        "last_active",
         "created_at",
         "updated_at",
     )

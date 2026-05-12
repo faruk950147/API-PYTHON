@@ -11,6 +11,11 @@ import secrets
 import re
 from datetime import timedelta
 
+# =========================
+# ONLINE STATUS CONFIG
+# =========================
+ONLINE_TIMEOUT_SECONDS = 60
+LAST_SEEN_UPDATE_INTERVAL = 30
 
 phone_validator = RegexValidator(
     r"^\+?\d{10,15}$",
@@ -82,9 +87,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
 
-    is_online = models.BooleanField(default=False)
     last_seen = models.DateTimeField(null=True, blank=True)
-    last_active = models.DateTimeField(auto_now=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -104,20 +107,24 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.email = self.email.lower()
         super().save(*args, **kwargs)
 
-    def mark_online(self):
-        self.is_online = True
-        self.last_seen = timezone.now()
-        self.save(update_fields=["is_online", "last_seen"])
+    # =====================================================
+    # ONLINE
+    # =====================================================
+    @property
+    def is_online(self):
+        if not self.last_seen:
+            return False
 
-    def mark_offline(self):
-        self.is_online = False
-        self.last_seen = timezone.now()
-        self.save(update_fields=["is_online", "last_seen"])
+        return (timezone.now() - self.last_seen).total_seconds() < ONLINE_TIMEOUT_SECONDS
 
-    def mark_active(self):
-        self.last_active = timezone.now()
-        self.save(update_fields=["last_active"])
+    def refresh_last_seen(self):
+        now = timezone.now()
 
+        if (not self.last_seen or (now - self.last_seen).total_seconds() > LAST_SEEN_UPDATE_INTERVAL):
+
+            User.objects.filter(pk=self.pk).update(last_seen=now)
+
+            self.last_seen = now
 
 class OTP(models.Model):
     OTP_LENGTH = getattr(settings, "OTP_LENGTH", 6)
