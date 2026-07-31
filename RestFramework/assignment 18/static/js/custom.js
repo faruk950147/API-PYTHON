@@ -1,1 +1,0 @@
-console.log("Custom JS loaded " + window.location.host);
